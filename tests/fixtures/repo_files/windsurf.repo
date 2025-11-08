@@ -1,0 +1,30 @@
+# Windsurf - AI-native IDE
+name = "windsurf"
+description = "Windsurf Editor - AI-native IDE built on VS Code"
+homepage = "https://windsurf.com"
+
+[source]
+type = "direct-url"
+
+# Note: Windsurf uses commit hashes in URLs which change per release
+# Latest stable URL format: https://windsurf-stable.codeiumdata.com/linux-{arch}/stable/{commit-hash}/Windsurf-linux-{arch}-{version}.tar.gz
+# For testing, we'll use a fixed version URL
+[source.download.urls]
+linux_x86_64 = "https://windsurf-stable.codeiumdata.com/linux-x64/stable/c855b1fa42fce019aedb4b06e6faa69d65ac7fd3/Windsurf-linux-x64-1.12.28.tar.gz"
+linux_aarch64 = "https://windsurf-stable.codeiumdata.com/linux-arm64/stable/c855b1fa42fce019aedb4b06e6faa69d65ac7fd3/Windsurf-linux-arm64-1.12.28.tar.gz"
+
+[install]
+mode = "userland"
+binaries = ["Windsurf-*/bin/windsurf", "Windsurf-*/bin/windsurf-url-handler"]
+
+[security]
+allow_insecure = true  # No checksum available from Windsurf
+
+[security.warnings]
+message = "Windsurf uses commit hashes in download URLs. Checksums cannot be verified automatically."
+
+[metadata]
+license = "Proprietary"
+authors = ["Codeium"]
+tags = ["ide", "editor", "ai", "vscode"]
+min_version = "1.12.0"

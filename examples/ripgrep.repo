@@ -1,0 +1,35 @@
+# ripgrep - fast grep alternative
+name = "ripgrep"
+description = "Fast recursive line-oriented search tool"
+repo_version = 1
+homepage = "https://github.com/BurntSushi/ripgrep"
+
+[source]
+type = "github-releases"
+repo = "BurntSushi/ripgrep"
+
+[source.download]
+url = "https://github.com/BurntSushi/ripgrep/releases/download/{version}/ripgrep-{version}-{arch}-unknown-{os}-musl.tar.gz"
+
+[source.os_mapping]
+linux = "linux"
+
+[source.arch_mapping]
+x86_64 = "x86_64"
+aarch64 = "aarch64"
+
+[install]
+binary_path = "ripgrep-*/rg"
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/BurntSushi/ripgrep/releases/download/{version}/ripgrep-{version}-{arch}-unknown-{os}-musl.tar.gz.sha256"
+algorithm = "sha256"
+single_hash = true
+
+[metadata]
+license = "MIT OR Unlicense"
+authors = ["Andrew Gallant"]
+tags = ["search", "grep", "cli-tool"]
