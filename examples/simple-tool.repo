@@ -1,0 +1,27 @@
+# Simple example with direct URLs
+name = "simple-tool"
+description = "Example of a simple tool with direct download URLs"
+repo_version = 1
+
+[source]
+type = "direct-url"
+
+[source.download.urls]
+linux_x86_64 = "https://example.com/downloads/simple-tool-linux-amd64.tar.gz"
+linux_aarch64 = "https://example.com/downloads/simple-tool-linux-arm64.tar.gz"
+macos_x86_64 = "https://example.com/downloads/simple-tool-darwin-amd64.tar.gz"
+macos_aarch64 = "https://example.com/downloads/simple-tool-darwin-arm64.tar.gz"
+
+[install]
+binary_path = "simple-tool"
+post_install = "chmod +x {install_dir}/simple-tool"
+
+[install.env]
+TOOL_HOME = "{install_dir}"
+
+[security]
+allow_insecure = true
+
+[metadata]
+license = "MIT"
+tags = ["example", "tool"]
