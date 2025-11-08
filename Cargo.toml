@@ -1,0 +1,62 @@
+[package]
+name = "ora"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ora Contributors"]
+description = "Omni Repository for Archives - Decentralized package manager"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Altagen/Ora"
+keywords = ["package-manager", "cli", "archives"]
+
+[[bin]]
+name = "ora"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive", "cargo", "env"] }
+console = "0.15"
+indicatif = "0.17"
+dialoguer = "0.11"
+tokio = { version = "1.35", features = ["full"] }
+reqwest = { version = "0.11", features = ["rustls-tls", "json", "stream"] }
+rustls = "0.22"
+rustls-native-certs = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+tar = "0.4"
+flate2 = "1.0"
+zip = "0.6"
+xz2 = "0.1"
+sha2 = "0.10"
+sequoia-openpgp = { version = "1.17", optional = true }
+git2 = { version = "0.18", features = ["vendored-openssl", "vendored-libgit2"] }
+glob = "0.3"
+urlencoding = "2.1"
+tempfile = "3.8"
+walkdir = "2.4"
+dirs = "5.0"
+anyhow = "1.0"
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.11"
+chrono = { version = "0.4", features = ["serde"] }
+platforms = "3.3"
+url = "2.5"
+async-trait = "0.1"
+regex = "1.10"
+
+[features]
+default = []
+gpg = ["sequoia-openpgp"]
+
+[dev-dependencies]
+mockito = "1.2"
+assert_cmd = "2.0"
+predicates = "3.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,287 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  # Only run releases from main branch
+  check-branch:
+    name: Check Branch
+    runs-on: ubuntu-latest
+    outputs:
+      is_main: ${{ steps.check.outputs.is_main }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if on main branch
+        id: check
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$BRANCH" = "main" ] || [ "${{ github.ref_type }}" = "tag" ]; then
+            # For tags, check if the tag points to main
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+              MAIN_COMMIT=$(git rev-parse origin/main)
+              if [ "$TAG_COMMIT" = "$MAIN_COMMIT" ]; then
+                echo "is_main=true" >> $GITHUB_OUTPUT
+              else
+                echo "is_main=false" >> $GITHUB_OUTPUT
+                echo "Error: Tag must be created from main branch"
+                exit 1
+              fi
+            else
+              echo "is_main=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "is_main=false" >> $GITHUB_OUTPUT
+            echo "Error: Releases can only be created from main branch"
+            exit 1
+          fi
+
+  # Generate changelog from conventional commits
+  generate-changelog:
+    name: Generate Changelog
+    needs: check-branch
+    if: needs.check-branch.outputs.is_main == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Generate changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG_RELEASE.md
+
+      - name: Read changelog
+        id: read_changelog
+        run: |
+          if [ -f "CHANGELOG_RELEASE.md" ]; then
+            echo "changelog<<EOF" >> $GITHUB_OUTPUT
+            cat CHANGELOG_RELEASE.md >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "changelog=No changelog generated" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload changelog artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG_RELEASE.md
+          retention-days: 7
+
+  # Build release binaries
+  build-release:
+    name: Build Release Binaries
+    needs: [check-branch, generate-changelog]
+    if: needs.check-branch.outputs.is_main == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            task: build-linux-amd64
+            platform: linux-amd64
+          - os: ubuntu-latest
+            task: build-linux-arm64
+            platform: linux-arm64
+          - os: macos-latest
+            task: build-macos-amd64
+            platform: macos-amd64
+          - os: macos-latest
+            task: build-macos-arm64
+            platform: macos-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nettle-dev
+
+      - name: Install cross-compilation dependencies (Linux ARM64)
+        if: runner.os == 'Linux' && matrix.task == 'build-linux-arm64'
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
+          echo "AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar" >> $GITHUB_ENV
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nettle
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Task
+        uses: arduino/setup-task@v1
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build binary
+        run: task ${{ matrix.task }}
+
+      - name: Generate checksum
+        run: task checksums
+
+      - name: Create archive
+        run: task archive
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          retention-days: 7
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    needs: [generate-changelog, build-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.sha256" \) -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Download changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: .
+
+      - name: Read release template
+        id: template
+        run: |
+          VERSION="${{ needs.generate-changelog.outputs.version }}"
+
+          # Read changelog if exists
+          if [ -f "CHANGELOG_RELEASE.md" ]; then
+            CHANGELOG=$(cat CHANGELOG_RELEASE.md)
+          else
+            CHANGELOG="See commits for changes in this release."
+          fi
+
+          # Create release notes from template
+          cat > RELEASE_NOTES.md << 'TEMPLATE'
+          # Ora Package Manager $VERSION
+
+          ## What's Changed
+
+          $CHANGELOG
+
+          ## Installation
+
+          ### Linux (x86_64)
+          ```bash
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-linux-amd64.tar.gz | tar xz
+          sudo install -m 755 ora-$VERSION-linux-amd64 /usr/local/bin/ora
+          ```
+
+          ### Linux (ARM64)
+          ```bash
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-linux-arm64.tar.gz | tar xz
+          sudo install -m 755 ora-$VERSION-linux-arm64 /usr/local/bin/ora
+          ```
+
+          ### macOS (Intel)
+          ```bash
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-macos-amd64.tar.gz | tar xz
+          sudo install -m 755 ora-$VERSION-macos-amd64 /usr/local/bin/ora
+          ```
+
+          ### macOS (Apple Silicon)
+          ```bash
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-macos-arm64.tar.gz | tar xz
+          sudo install -m 755 ora-$VERSION-macos-arm64 /usr/local/bin/ora
+          ```
+
+          ## Verification
+
+          Verify the integrity of your download:
+
+          ```bash
+          # Download checksum file
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-<platform>.tar.gz.sha256 -o checksum.txt
+
+          # Verify (Linux/macOS)
+          sha256sum -c checksum.txt
+          ```
+
+          ## Documentation
+
+          - [README](https://github.com/${{ github.repository }}/blob/$VERSION/README.md)
+          - [Contributing Guide](https://github.com/${{ github.repository }}/blob/$VERSION/CONTRIBUTING.md)
+          - [Security Configuration](https://github.com/${{ github.repository }}/blob/$VERSION/SECURITY_CONFIGURATION.md)
+
+          ## Full Changelog
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_VERSION...$VERSION
+          TEMPLATE
+
+          # Replace variables
+          sed -i "s/\$VERSION/$VERSION/g" RELEASE_NOTES.md
+          sed -i "/\$CHANGELOG/r CHANGELOG_RELEASE.md" RELEASE_NOTES.md
+          sed -i "/\$CHANGELOG/d" RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.generate-changelog.outputs.version }}
+          name: Ora ${{ needs.generate-changelog.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
