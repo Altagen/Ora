@@ -1,0 +1,37 @@
+# jq - Command-line JSON processor
+name = "jq"
+description = "Lightweight and flexible command-line JSON processor"
+homepage = "https://jqlang.github.io/jq/"
+
+[source]
+type = "github-releases"
+repo = "jqlang/jq"
+
+[source.download]
+url = "https://github.com/jqlang/jq/releases/download/jq-{version}/jq-linux-{arch}"
+
+[platform]
+[platform.os_map]
+linux = "linux"
+
+[platform.arch_map]
+x86_64 = "amd64"
+aarch64 = "arm64"
+
+[install]
+mode = "userland"
+binaries = ["jq-linux-*"]
+post_install = "chmod +x {install_dir}/jq-linux-*"
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/jqlang/jq/releases/download/jq-{version}/sha256sum.txt"
+algorithm = "sha256"
+format = "multi-hash"
+
+[metadata]
+license = "MIT"
+authors = ["jq contributors"]
+tags = ["json", "cli", "parser"]

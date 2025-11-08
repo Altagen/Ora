@@ -1,0 +1,35 @@
+# Windman - Windsurf window manager for i3/sway
+name = "windman"
+description = "Window manager integration for Windsurf IDE on i3/sway"
+homepage = "https://github.com/Altagen/windman"
+
+[source]
+type = "github-releases"
+repo = "Altagen/Windman"
+
+[source.download]
+url = "https://github.com/Altagen/Windman/releases/download/{version}/windman-{version}-x86_64-unknown-linux-gnu.tar.gz"
+
+[platform]
+[platform.os_map]
+linux = "linux"
+
+[platform.arch_map]
+x86_64 = "x86_64"
+
+[install]
+mode = "userland"
+binaries = ["**/windman"]
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/Altagen/Windman/releases/download/{version}/windman-{version}-x86_64-unknown-linux-gnu.tar.gz.sha256"
+algorithm = "sha256"
+format = "multi-hash"
+
+[metadata]
+license = "MIT"
+authors = ["Altagen"]
+tags = ["window-manager", "i3", "sway", "windsurf"]

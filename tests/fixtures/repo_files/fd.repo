@@ -1,0 +1,39 @@
+# fd - A simple, fast alternative to find
+name = "fd"
+description = "A simple, fast and user-friendly alternative to find"
+homepage = "https://github.com/sharkdp/fd"
+
+[source]
+type = "github-releases"
+repo = "sharkdp/fd"
+
+[source.download]
+url = "https://github.com/sharkdp/fd/releases/download/v{version}/fd-v{version}-x86_64-unknown-linux-musl.tar.gz"
+
+[platform]
+[platform.os_map]
+linux = "linux"
+
+[platform.arch_map]
+x86_64 = "x86_64"
+
+[install]
+mode = "userland"
+binaries = ["fd-*/fd"]
+
+[[install.files]]
+src = "fd-*/autocomplete/fd.bash"
+dst = "completions/fd.bash"
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/sharkdp/fd/releases/download/v{version}/fd-v{version}-x86_64-unknown-linux-musl.tar.gz.sha256"
+algorithm = "sha256"
+format = "single-hash"
+
+[metadata]
+license = "MIT OR Apache-2.0"
+authors = ["David Peter"]
+tags = ["find", "search", "cli"]

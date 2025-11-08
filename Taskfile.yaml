@@ -1,0 +1,186 @@
+version: '3'
+
+vars:
+  VERSION:
+    sh: grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/'
+  BINARY_NAME: ora
+  BUILD_DIR: ./target/release
+  DIST_DIR: ./dist
+
+tasks:
+  # Development tasks
+  dev:
+    desc: Run development build
+    cmds:
+      - cargo build
+
+  test:
+    desc: Run all tests
+    cmds:
+      - cargo test --lib --all-features
+
+  test-verbose:
+    desc: Run tests with output
+    cmds:
+      - cargo test --lib --all-features -- --nocapture
+
+  test-integration:
+    desc: Run integration tests
+    cmds:
+      - cargo test --tests
+
+  test-all:
+    desc: Run all tests (unit + integration)
+    cmds:
+      - cargo test --lib --all-features
+      - cargo test --tests
+
+  fmt:
+    desc: Format code
+    cmds:
+      - cargo fmt --all
+
+  fmt-check:
+    desc: Check code formatting
+    cmds:
+      - cargo fmt --all -- --check
+
+  clippy:
+    desc: Run clippy lints
+    cmds:
+      - cargo clippy --all-targets --all-features -- -D warnings
+
+  audit:
+    desc: Run security audit
+    cmds:
+      - cargo audit
+
+  check:
+    desc: Run all checks (fmt, clippy, test)
+    cmds:
+      - task: fmt-check
+      - task: clippy
+      - task: test
+
+  # Build tasks for all platforms
+  build:
+    desc: Build for current platform (release)
+    cmds:
+      - cargo build --release
+
+  build-linux-amd64:
+    desc: Build for Linux x86_64
+    vars:
+      TARGET: x86_64-unknown-linux-gnu
+    cmds:
+      - rustup target add {{.TARGET}}
+      - cargo build --release --target {{.TARGET}}
+      - mkdir -p {{.DIST_DIR}}
+      - cp target/{{.TARGET}}/release/{{.BINARY_NAME}} {{.DIST_DIR}}/{{.BINARY_NAME}}-{{.VERSION}}-linux-amd64
+
+  build-linux-arm64:
+    desc: Build for Linux aarch64
+    vars:
+      TARGET: aarch64-unknown-linux-gnu
+    cmds:
+      - rustup target add {{.TARGET}}
+      - cargo build --release --target {{.TARGET}}
+      - mkdir -p {{.DIST_DIR}}
+      - cp target/{{.TARGET}}/release/{{.BINARY_NAME}} {{.DIST_DIR}}/{{.BINARY_NAME}}-{{.VERSION}}-linux-arm64
+
+  build-macos-amd64:
+    desc: Build for macOS x86_64
+    vars:
+      TARGET: x86_64-apple-darwin
+    cmds:
+      - rustup target add {{.TARGET}}
+      - cargo build --release --target {{.TARGET}}
+      - mkdir -p {{.DIST_DIR}}
+      - cp target/{{.TARGET}}/release/{{.BINARY_NAME}} {{.DIST_DIR}}/{{.BINARY_NAME}}-{{.VERSION}}-macos-amd64
+
+  build-macos-arm64:
+    desc: Build for macOS aarch64 (Apple Silicon)
+    vars:
+      TARGET: aarch64-apple-darwin
+    cmds:
+      - rustup target add {{.TARGET}}
+      - cargo build --release --target {{.TARGET}}
+      - mkdir -p {{.DIST_DIR}}
+      - cp target/{{.TARGET}}/release/{{.BINARY_NAME}} {{.DIST_DIR}}/{{.BINARY_NAME}}-{{.VERSION}}-macos-arm64
+
+  build-all:
+    desc: Build for all supported platforms
+    cmds:
+      - task: build-linux-amd64
+      - task: build-linux-arm64
+      - task: build-macos-amd64
+      - task: build-macos-arm64
+
+  # Checksum tasks
+  checksums:
+    desc: Generate SHA256 checksums for all binaries
+    dir: "{{.DIST_DIR}}"
+    cmds:
+      - |
+        for file in {{.BINARY_NAME}}-*; do
+          if [ -f "$file" ]; then
+            sha256sum "$file" > "$file.sha256"
+            echo "Generated checksum for $file"
+          fi
+        done
+
+  # Archive tasks
+  archive:
+    desc: Create archives for all binaries
+    dir: "{{.DIST_DIR}}"
+    cmds:
+      - |
+        for file in {{.BINARY_NAME}}-{{.VERSION}}-*; do
+          if [ -f "$file" ] && [ ! -f "$file.sha256" ]; then
+            tar -czf "$file.tar.gz" "$file"
+            echo "Created archive $file.tar.gz"
+          fi
+        done
+
+  # Release preparation
+  prepare-release:
+    desc: Prepare release artifacts (build all, checksums, archives)
+    cmds:
+      - rm -rf {{.DIST_DIR}}
+      - task: build-all
+      - task: checksums
+      - task: archive
+      - ls -lh {{.DIST_DIR}}/
+
+  # Cleanup tasks
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
+      - rm -rf {{.DIST_DIR}}
+
+  clean-dist:
+    desc: Clean distribution directory only
+    cmds:
+      - rm -rf {{.DIST_DIR}}
+
+  # Version management
+  version:
+    desc: Show current version
+    cmds:
+      - echo "{{.VERSION}}"
+
+  # Install locally
+  install:
+    desc: Install binary to ~/.local/bin
+    cmds:
+      - cargo build --release
+      - mkdir -p ~/.local/bin
+      - cp {{.BUILD_DIR}}/{{.BINARY_NAME}} ~/.local/bin/
+      - echo "Installed to ~/.local/bin/{{.BINARY_NAME}}"
+
+  # Help
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
