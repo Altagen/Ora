@@ -30,7 +30,8 @@ pub struct SourceConfig {
     pub api_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api_format: Option<String>,
-    pub download: DownloadConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub download: Option<DownloadConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<VersionDiscoveryConfig>,
 }
@@ -42,6 +43,7 @@ pub enum ProviderType {
     GitlabReleases,
     CustomApi,
     DirectUrl,
+    WebpageScraping,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -178,6 +180,9 @@ pub struct PlatformConfig {
     pub os_map: HashMap<String, String>,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub arch_map: HashMap<String, String>,
+    /// URL filters for webpage-scraping provider: maps "os_arch" to URL substring
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub url_filters: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -188,6 +193,12 @@ pub struct VersionDiscoveryConfig {
     pub json_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub regex: Option<String>,
+    /// Regex pattern to extract full URLs from HTML (for webpage-scraping)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url_pattern: Option<String>,
+    /// Regex pattern to extract version from URL (for webpage-scraping)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version_pattern: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
