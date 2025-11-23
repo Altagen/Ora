@@ -1,6 +1,6 @@
 # Ora Security Configuration - Complete Guide
 
-**Version**: 0.1.0
+**Version**: 0.2.0
 
 This guide documents Ora's security configuration system.
 
@@ -35,6 +35,14 @@ Complete list of all security configuration variables:
 | `max_repo_size` | u64 | `104857600` | Max repo size (100 MB) |
 | `timeout_seconds` | u64 | `300` | Git operation timeout |
 | `allow_force_checkout` | bool | `false` | Allow git force checkout |
+
+### Security Settings (`[security]`)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `require_checksums` | bool | `true` | Require checksum verification |
+| `require_signatures` | bool | `false` | Require GPG signatures |
+| `max_git_size_mb` | u64 | `1024` | Max git repository size (1 GB) - Git bomb protection |
 
 ### Extraction Security (`[extraction]`)
 
@@ -220,11 +228,51 @@ allow_force_checkout = false
 
 **🚨 WARNING**: Never set `https_only = false` in production!
 
+**Git Bomb Protection** (New in 0.2.0):
+
+Ora now includes comprehensive protection against git bomb attacks:
+
+```toml
+[security]
+# Maximum git repository size in MB (default: 1024 MB = 1 GB)
+max_git_size_mb = 1024
+```
+
+**How it works**:
+1. **Shallow Clone**: Uses `git clone --depth=1` to only fetch the latest commit
+2. **Size Checking**: Measures `.git` directory size after cloning
+3. **Automatic Cleanup**: Removes repository if it exceeds the limit
+4. **Configurable Limit**: Adjust `max_git_size_mb` for legitimate large repositories
+
+**Example attack scenarios prevented**:
+
+- ✅ **History Bomb**: Millions of commits with large binary files (blocked by shallow clone)
+- ✅ **Large Objects Bomb**: Gigantic blobs in git history (blocked by shallow clone)
+- ✅ **Packed Bomb**: Malicious git pack files that expand to gigabytes (blocked by size check)
+
+**Configuration example**:
+
+```toml
+# For most use cases (default)
+[security]
+max_git_size_mb = 1024  # 1 GB
+
+# For large legitimate repositories (e.g., with assets)
+[security]
+max_git_size_mb = 5120  # 5 GB
+
+# For strict security environments
+[security]
+max_git_size_mb = 512  # 512 MB
+```
+
 **Blocked vulnerabilities**:
 
 - ✅ VULN-001: Command injection via `git://`, `ssh://`, `file://`
 - ✅ SSRF via alternative Git protocols
 - ✅ DoS via oversized repositories
+- ✅ **NEW**: Git bomb attacks via malicious history
+- ✅ **NEW**: Resource exhaustion via large pack files
 
 ---
 

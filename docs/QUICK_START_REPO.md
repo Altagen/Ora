@@ -86,7 +86,7 @@ def456abc123...  prometheus-2.45.0.darwin-amd64.tar.gz
 
 #### Step 5: Write the .repo file
 
-Create `packages/prometheus.repo`:
+Create `ora-registry/prometheus.repo`:
 
 ```toml
 name = "prometheus"
@@ -130,7 +130,7 @@ tags = ["monitoring", "metrics"]
 #### Step 6: Test it
 
 ```bash
-ora install --repo packages/prometheus.repo
+ora install --repo ora-registry/prometheus.repo
 ```
 
 **Done!** Your binaries should now be in `~/.local/bin/`
@@ -159,7 +159,7 @@ ripgrep-14.1.0-aarch64-apple-darwin.tar.gz
 
 #### Step 2: Map each platform explicitly
 
-Create `packages/ripgrep.repo`:
+Create `ora-registry/ripgrep.repo`:
 
 ```toml
 name = "ripgrep"
@@ -225,7 +225,7 @@ These are direct binaries, not archives.
 
 #### Step 2: Write the .repo file
 
-Create `packages/jq.repo`:
+Create `ora-registry/jq.repo`:
 
 ```toml
 name = "jq"
@@ -270,10 +270,10 @@ allow_insecure = true  # ⚠️ Only if no checksums exist
 
 ```bash
 # 1. Validate the syntax
-ora validate packages/mypackage.repo
+ora validate ora-registry/mypackage.repo
 
 # 2. Try installing it
-ora install --repo packages/mypackage.repo
+ora install --repo ora-registry/mypackage.repo
 
 # 3. Verify the binary works
 mypackage --version
@@ -286,8 +286,8 @@ ora uninstall mypackage
 
 ```bash
 # 1. Create a test registry
-mkdir -p test-registry/packages
-cp packages/mypackage.repo test-registry/packages/
+mkdir -p test-registry/ora-registry
+cp ora-registry/mypackage.repo test-registry/ora-registry/
 
 cd test-registry
 git init
