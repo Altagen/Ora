@@ -1,0 +1,39 @@
+[package]
+name = "windsurf-next"
+description = "Windsurf Next - AI-powered code editor (Beta channel)"
+homepage = "https://windsurf.com"
+
+[source.version]
+discovery_type = "html-scraping"
+discovery_url = "https://windsurf.com/editor/releases"
+url_pattern = "https://windsurf-stable\\.codeiumdata\\.com/[^/]+/next/[^\"\\s]+?\\.(zip|tar\\.gz|tar\\.xz|tar\\.bz2|tgz)"
+version_pattern = "([0-9]+\\.[0-9]+\\.[0-9]+)"
+
+[install]
+mode = "userland"
+binaries = ["Windsurf/bin/windsurf-next"]
+
+post_install = '''
+#!/bin/bash
+set -e
+
+# Fix permissions on the Windsurf directory
+# Windsurf needs executable permissions on:
+# - Main binary (windsurf-next)
+# - Crash handler (chrome_crashpad_handler)
+# - Chrome sandbox (chrome-sandbox)
+# - All .so libraries (libffmpeg.so, libEGL.so, libGLESv2.so, etc.)
+
+# Make all binaries and libraries executable
+chmod +x "$INSTALL_DIR"/Windsurf/windsurf-next 2>/dev/null || chmod +x "$INSTALL_DIR"/Windsurf/windsurf
+chmod +x "$INSTALL_DIR"/Windsurf/chrome_crashpad_handler
+chmod +x "$INSTALL_DIR"/Windsurf/chrome-sandbox
+chmod +x "$INSTALL_DIR"/Windsurf/*.so 2>/dev/null || true
+chmod +x "$INSTALL_DIR"/Windsurf/bin/* 2>/dev/null || true
+
+echo "✓ Windsurf Next installed successfully"
+echo "  - Run 'windsurf-next' to launch"
+'''
+
+[security]
+allow_insecure = true

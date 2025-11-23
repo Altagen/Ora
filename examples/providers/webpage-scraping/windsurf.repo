@@ -1,0 +1,66 @@
+name = "windsurf"
+description = "Windsurf Editor - AI-powered IDE"
+homepage = "https://windsurf.com"
+
+[source]
+type = "webpage-scraping"
+
+[source.version]
+discovery_type = "html-scraping"
+discovery_url = "https://windsurf.com/editor/releases"
+
+# Regex to extract full download URLs from the HTML page
+# Match URL up to file extension (zip, tar.gz, etc)
+# Only match URLs in the /stable/ path (not /next/)
+url_pattern = "https://windsurf-stable\\.codeiumdata\\.com/[^/]+/stable/[^\"\\s]+?\\.(zip|tar\\.gz|tar\\.xz|tar\\.bz2|tgz)"
+
+# Regex to extract version number from URLs (capture group 1)
+version_pattern = "([0-9]+\\.[0-9]+\\.[0-9]+)"
+
+[platform]
+# Map system platform identifiers to URL platform identifiers
+# Format: system_os_normalized_arch = "url_platform_identifier"
+[platform.url_filters]
+linux_amd64 = "linux-x64"
+darwin_aarch64 = "darwin-arm64"
+darwin_amd64 = "darwin-x64"
+windows_amd64 = "win32-x64-archive"
+windows_aarch64 = "win32-arm64-archive"
+
+[install]
+mode = "userland"
+
+# Binaries to install from the archive
+binaries = ["Windsurf/bin/windsurf"]
+
+# Post-install script to fix permissions on all Electron binaries and libraries
+post_install = '''
+#!/bin/bash
+set -e
+
+# Fix permissions on the Windsurf directory
+# Windsurf needs executable permissions on:
+# - Main binary (windsurf)
+# - Crash handler (chrome_crashpad_handler)
+# - Chrome sandbox (chrome-sandbox)
+# - All .so libraries (libffmpeg.so, libEGL.so, libGLESv2.so, etc.)
+
+# Make all binaries and libraries executable
+chmod +x "$INSTALL_DIR"/Windsurf/windsurf
+chmod +x "$INSTALL_DIR"/Windsurf/chrome_crashpad_handler
+chmod +x "$INSTALL_DIR"/Windsurf/chrome-sandbox
+chmod +x "$INSTALL_DIR"/Windsurf/*.so 2>/dev/null || true
+chmod +x "$INSTALL_DIR"/Windsurf/bin/* 2>/dev/null || true
+
+echo "✓ Windsurf installed successfully"
+echo "  - Run 'windsurf' to launch"
+'''
+
+[security]
+# Windsurf doesn't provide checksums, so we must allow insecure installation
+allow_insecure = true
+
+[metadata]
+license = "Proprietary"
+authors = ["Codeium"]
+tags = ["ide", "editor", "ai"]
