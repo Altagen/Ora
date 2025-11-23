@@ -130,7 +130,13 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
         let latest = versions
             .iter()
             .filter(|v| !v.prerelease)
-            .max_by(|a, b| a.tag.cmp(&b.tag))
+            .max_by(|a, b| {
+                // Use semver comparison if possible, fallback to string comparison
+                match (semver::Version::parse(&a.tag), semver::Version::parse(&b.tag)) {
+                    (Ok(v_a), Ok(v_b)) => v_a.cmp(&v_b),
+                    _ => a.tag.cmp(&b.tag),
+                }
+            })
             .context("No versions available")?;
         latest.tag.clone()
     };
@@ -145,10 +151,22 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
     log::info!("Download URL: {}", download_url);
 
     // Download
-    let filename = download_url
+    // Strip trailing slashes from URL before extracting filename
+    let url_without_trailing_slash = download_url.trim_end_matches('/');
+    let filename = url_without_trailing_slash
         .split('/')
         .next_back()
         .context("Invalid download URL")?;
+
+    // Validate that we got a non-empty filename
+    if filename.is_empty() {
+        anyhow::bail!(
+            "Failed to extract filename from download URL: {}\n\
+             The URL appears to be invalid. Please check the .repo file's download URL template.",
+            download_url
+        );
+    }
+
     let download_path = Cache::download_path(filename)?;
 
     let downloader = Downloader::new()?;

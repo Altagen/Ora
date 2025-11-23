@@ -4,6 +4,7 @@ pub mod discovery;
 pub mod github;
 pub mod gitlab;
 pub mod traits;
+pub mod webpage_scraping;
 
 use anyhow::Result;
 use std::sync::Arc;
@@ -15,6 +16,7 @@ use custom_api::CustomApiProvider;
 use direct_url::DirectUrlProvider;
 use github::GithubProvider;
 use gitlab::GitlabProvider;
+use webpage_scraping::WebpageScrapingProvider;
 
 pub fn create_provider(config: &RepoConfig) -> Result<Arc<dyn VersionProvider>> {
     match &config.source.provider_type {
@@ -46,5 +48,6 @@ pub fn create_provider(config: &RepoConfig) -> Result<Arc<dyn VersionProvider>> 
             Ok(Arc::new(CustomApiProvider::new(api_url, config.clone())?))
         }
         ProviderType::DirectUrl => Ok(Arc::new(DirectUrlProvider::new(config.clone())?)),
+        ProviderType::WebpageScraping => Ok(Arc::new(WebpageScrapingProvider::new(config.clone())?)),
     }
 }
