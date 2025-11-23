@@ -1,8 +1,8 @@
 [package]
 name = "ora"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-authors = ["Ora Contributors"]
+authors = ["Ange Cesari"]
 description = "Omni Repository for Archives - Decentralized package manager"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Altagen/Ora"
@@ -45,6 +45,8 @@ platforms = "3.3"
 url = "2.5"
 async-trait = "0.1"
 regex = "1.10"
+md5 = "0.7"
+semver = "1.0"
 
 [features]
 default = []
