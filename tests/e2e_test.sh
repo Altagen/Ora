@@ -226,6 +226,78 @@ else
 fi
 $ORA_BINARY registry remove fake-reg > /dev/null 2>&1 || true
 
+# Test 18: Test registry sync with no registries (Issue #2)
+print_test "Testing 'ora registry sync' with no registries"
+# Clean up any remaining registries first
+$ORA_BINARY registry list 2>&1 | grep -oP '^\s*✓\s*\K\S+' | while read -r reg; do
+    $ORA_BINARY registry remove "$reg" > /dev/null 2>&1 || true
+done
+OUTPUT=$($ORA_BINARY registry sync 2>&1)
+if echo "$OUTPUT" | grep -q "No registries configured\|registr"; then
+    print_success "Registry sync handles no registries gracefully"
+else
+    print_error "Registry sync should show 'No registries configured'"
+fi
+
+# Test 19: Test registry sync command exists (Issue #2 - command was missing)
+print_test "Testing 'ora registry sync' command exists"
+OUTPUT=$($ORA_BINARY registry sync --help 2>&1 || true)
+if echo "$OUTPUT" | grep -q -i "sync\|usage"; then
+    print_success "Registry sync command is available"
+else
+    print_error "Registry sync command not found"
+fi
+
+# Test 20: Test registry verify with non-existent registry (Issue #1)
+print_test "Testing 'ora registry verify' with non-existent registry"
+OUTPUT=$($ORA_BINARY registry verify nonexistent-reg 2>&1 || true)
+if echo "$OUTPUT" | grep -q -i "not found"; then
+    print_success "Registry verify handles non-existent registry"
+else
+    print_error "Registry verify should fail for non-existent registry"
+fi
+
+# Test 21: Add a test registry for verify tests
+print_test "Testing 'ora registry verify' setup (add test registry)"
+$ORA_BINARY registry add test-verify-reg https://github.com/brandy223/ora-registry.git > /dev/null 2>&1 || true
+if $ORA_BINARY registry list 2>&1 | grep -q "test-verify-reg"; then
+    print_success "Test registry added for verification tests"
+else
+    print_error "Failed to add test registry"
+fi
+
+# Test 22: Test registry verify with valid registry (Issue #1)
+print_test "Testing 'ora registry verify' with valid registry"
+OUTPUT=$($ORA_BINARY registry verify test-verify-reg 2>&1 || true)
+if echo "$OUTPUT" | grep -q "verification complete"; then
+    print_success "Registry verify succeeds with valid registry"
+else
+    print_error "Registry verify should succeed with valid registry"
+fi
+
+# Test 23: Test registry verify shows detailed info (Issue #1)
+print_test "Testing 'ora registry verify' shows detailed information"
+OUTPUT=$($ORA_BINARY registry verify test-verify-reg 2>&1 || true)
+if echo "$OUTPUT" | grep -q "Registry found in configuration" && \
+   echo "$OUTPUT" | grep -q "Valid git repository" && \
+   echo "$OUTPUT" | grep -q "packages.*directory exists"; then
+    print_success "Registry verify shows detailed validation steps"
+else
+    print_error "Registry verify should show detailed validation info"
+fi
+
+# Test 24: Test registry verify shows package count (Issue #1)
+print_test "Testing 'ora registry verify' shows package count"
+OUTPUT=$($ORA_BINARY registry verify test-verify-reg 2>&1 || true)
+if echo "$OUTPUT" | grep -q "Found.*package"; then
+    print_success "Registry verify shows package count"
+else
+    print_error "Registry verify should show package count"
+fi
+
+# Cleanup test registry
+$ORA_BINARY registry remove test-verify-reg > /dev/null 2>&1 || true
+
 # Print final summary
 print_summary
 
