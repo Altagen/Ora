@@ -3,6 +3,7 @@ use anyhow::{Context, Result};
 use crate::config::global::Registry;
 use crate::config::repo::RepoConfig;
 use crate::registry::sync::RegistrySync;
+use crate::storage::cache::Cache;
 use crate::storage::database::{load_global_config, save_global_config};
 
 pub struct RegistryManager;
@@ -95,6 +96,58 @@ impl RegistryManager {
 
         save_global_config(&config).await?;
         log::info!("Registry '{}' removed", name);
+
+        Ok(())
+    }
+
+    pub async fn sync_registries(name: Option<String>) -> Result<()> {
+        let config = load_global_config().await?;
+
+        if let Some(name) = name {
+            let registry = config
+                .registries
+                .iter()
+                .find(|r| r.name == name)
+                .context(format!("Registry '{}' not found", name))?;
+
+            println!("Syncing registry: {}", registry.name);
+            RegistrySync::sync_registry(&registry.name, &registry.url).await?;
+            println!("✓ Registry '{}' synced successfully", registry.name);
+        } else {
+            if config.registries.is_empty() {
+                println!("No registries configured. Add one with: ora registry add <name> <url>");
+                return Ok(());
+            }
+
+            let enabled_registries: Vec<_> = config
+                .registries
+                .iter()
+                .filter(|r| r.enabled)
+                .collect();
+
+            if enabled_registries.is_empty() {
+                println!("No enabled registries to sync.");
+                return Ok(());
+            }
+
+            println!("Syncing {} registr{}...",
+                enabled_registries.len(),
+                if enabled_registries.len() == 1 { "y" } else { "ies" }
+            );
+
+            for registry in enabled_registries {
+                println!("  → Syncing '{}'...", registry.name);
+                match RegistrySync::sync_registry(&registry.name, &registry.url).await {
+                    Ok(_) => println!("    ✓ Synced successfully"),
+                    Err(e) => {
+                        log::error!("Failed to sync registry '{}': {}", registry.name, e);
+                        println!("    ✗ Failed: {}", e);
+                    }
+                }
+            }
+
+            println!("\nSync complete!");
+        }
 
         Ok(())
     }
@@ -266,5 +319,120 @@ impl RegistryManager {
             registry_name
         );
         Ok((repo_config, registry.name.clone()))
+    }
+
+    pub async fn verify_registry(name: String) -> Result<()> {
+        let config = load_global_config().await?;
+
+        println!("Verifying registry: {}", name);
+        println!();
+
+        // 1. Check if registry exists in config
+        let registry = config
+            .registries
+            .iter()
+            .find(|r| r.name == name)
+            .context(format!("Registry '{}' not found in configuration", name))?;
+
+        println!("✓ Registry found in configuration");
+        println!("  Name: {}", registry.name);
+        println!("  URL: {}", registry.url);
+        println!("  Trust Level: {:?}", registry.trust_level);
+        println!("  Enabled: {}", registry.enabled);
+
+        // 2. Check if registry directory exists (has been synced)
+        let registry_path = Cache::registry_path(&name)?;
+
+        if !registry_path.exists() {
+            println!("✗ Registry not synced locally");
+            println!("  Expected path: {:?}", registry_path);
+            println!("\n  Run 'ora registry sync {}' to download it", name);
+            anyhow::bail!("Registry '{}' not synced", name);
+        }
+
+        println!("✓ Registry synced locally");
+        println!("  Path: {:?}", registry_path);
+
+        // 3. Check if it's a valid git repository
+        match git2::Repository::open(&registry_path) {
+            Ok(repo) => {
+                println!("✓ Valid git repository");
+
+                // Get current HEAD commit
+                if let Ok(head) = repo.head() {
+                    if let Some(commit) = head.target() {
+                        println!("  Commit: {}", commit);
+                    }
+                }
+
+                // Check remote URL
+                if let Ok(remote) = repo.find_remote("origin") {
+                    if let Some(url) = remote.url() {
+                        println!("  Remote: {}", url);
+
+                        // Verify it matches the configured URL
+                        if url != registry.url {
+                            println!("  ⚠️  Warning: Remote URL doesn't match configured URL");
+                            println!("     Configured: {}", registry.url);
+                            println!("     Actual: {}", url);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                println!("✗ Not a valid git repository: {}", e);
+                anyhow::bail!("Registry directory exists but is not a valid git repository");
+            }
+        }
+
+        // 4. Check for ora-registry/ directory
+        let ora_registry_dir = registry_path.join("ora-registry");
+
+        if !ora_registry_dir.exists() {
+            println!("✗ Missing 'ora-registry/' directory");
+            println!("  A valid registry must contain an 'ora-registry/' directory with .repo files");
+            anyhow::bail!("Registry '{}' is missing the required 'ora-registry/' directory", name);
+        }
+
+        println!("✓ 'ora-registry/' directory exists");
+        let registry_dir = ora_registry_dir;
+
+        // 5. Count .repo files
+        let mut repo_files = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(&registry_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|s| s.to_str()) == Some("repo") {
+                    if let Some(file_name) = path.file_name().and_then(|s| s.to_str()) {
+                        repo_files.push(file_name.to_string());
+                    }
+                }
+            }
+        }
+
+        if repo_files.is_empty() {
+            println!("⚠️  Warning: No .repo files found in registry directory");
+            println!("  This registry appears to be empty");
+        } else {
+            println!("✓ Found {} package definition{}",
+                repo_files.len(),
+                if repo_files.len() == 1 { "" } else { "s" }
+            );
+
+            // Show first few packages
+            let display_count = std::cmp::min(5, repo_files.len());
+            for (i, file) in repo_files.iter().take(display_count).enumerate() {
+                println!("  {}. {}", i + 1, file.trim_end_matches(".repo"));
+            }
+
+            if repo_files.len() > display_count {
+                println!("  ... and {} more", repo_files.len() - display_count);
+            }
+        }
+
+        println!();
+        println!("✓ Registry '{}' verification complete!", name);
+
+        Ok(())
     }
 }
