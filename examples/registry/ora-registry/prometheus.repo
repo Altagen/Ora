@@ -1,0 +1,40 @@
+# Prometheus monitoring system
+name = "prometheus"
+description = "Prometheus monitoring and alerting toolkit"
+repo_version = 1
+homepage = "https://prometheus.io"
+
+[source]
+type = "github-releases"
+repo = "prometheus/prometheus"
+
+[source.download]
+url = "https://github.com/prometheus/prometheus/releases/download/v{version}/prometheus-{version}.{os}-{arch}.tar.gz"
+
+[source.os_mapping]
+linux = "linux"
+macos = "darwin"
+
+[source.arch_mapping]
+x86_64 = "amd64"
+aarch64 = "arm64"
+
+[install]
+binary_path = "prometheus-*/prometheus"
+
+[[install.binaries]]
+src = "prometheus-*/promtool"
+name = "promtool"
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/prometheus/prometheus/releases/download/v{version}/sha256sums.txt"
+algorithm = "sha256"
+single_hash = false
+
+[metadata]
+license = "Apache-2.0"
+authors = ["Prometheus Authors"]
+tags = ["monitoring", "metrics", "alerting"]
