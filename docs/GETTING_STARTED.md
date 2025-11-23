@@ -43,7 +43,7 @@ cargo install --git https://github.com/Altagen/Ora
 
 ```bash
 ora --version
-# Output: ora 0.1.0
+# Output: ora 0.2.0
 ```
 
 ---
@@ -103,13 +103,13 @@ A registry must have this structure:
 
 ```
 my-registry/
-└── packages/           # Required directory
+└── ora-registry/       # Required directory
     ├── ripgrep.repo
     ├── fd.repo
     └── jq.repo
 ```
 
-**Important**: The `packages/` directory is required. Ora searches for `.repo` files in this directory.
+**Important**: The `ora-registry/` directory is required. Ora searches for `.repo` files in this directory.
 
 ### How Search Works
 
@@ -187,7 +187,7 @@ This performs comprehensive validation including:
 1. **Configuration Check** - Registry exists in config
 2. **Local Sync Check** - Registry has been synced locally
 3. **Git Repository Validation** - Valid git repository with correct remote URL
-4. **Structure Validation** - Required `packages/` directory exists
+4. **Structure Validation** - Required `ora-registry/` directory exists
 5. **Package Count** - Lists available `.repo` files
 
 Example output:
@@ -204,7 +204,7 @@ Verifying registry: my-registry
 ✓ Valid git repository
   Commit: 61e1b655924b03daf00ff578c600655b850f6610
   Remote: https://github.com/username/ora-registry.git
-✓ 'packages/' directory exists
+✓ 'ora-registry/' directory exists
 ✓ Found 3 package definitions
   1. ripgrep
   2. bat
@@ -216,7 +216,7 @@ Verifying registry: my-registry
 **Common issues:**
 - **Registry not synced**: Run `ora registry sync <name>` first
 - **Invalid git repository**: Re-sync or remove and re-add the registry
-- **Missing packages/ directory**: Registry may be misconfigured
+- **Missing ora-registry/ directory**: Registry may be misconfigured
 
 ### Remove a Registry
 
@@ -452,19 +452,19 @@ cd ora-packages
 git init
 ```
 
-### 2. Create the packages/ Directory
+### 2. Create the ora-registry/ Directory
 
-Ora requires a `packages/` directory:
+Ora requires an `ora-registry/` directory:
 
 ```bash
-mkdir packages
+mkdir ora-registry
 ```
 
 ### 3. Add .repo Files
 
-Create `.repo` files in the `packages/` directory. See [Creating .repo Files](CREATING_REPO_FILES.md).
+Create `.repo` files in the `ora-registry/` directory. See [Creating .repo Files](CREATING_REPO_FILES.md).
 
-Example `packages/ripgrep.repo`:
+Example `ora-registry/ripgrep.repo`:
 
 ```toml
 name = "ripgrep"

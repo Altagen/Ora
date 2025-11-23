@@ -592,14 +592,14 @@ When creating a registry, organize your `.repo` files like this:
 ```
 my-registry/                # Git repository root
 ├── README.md              # Optional: describe your registry
-└── packages/              # REQUIRED: .repo files go here
+└── ora-registry/          # REQUIRED: .repo files go here
     ├── ripgrep.repo
     ├── fd.repo
     ├── prometheus.repo
     └── ...
 ```
 
-**Important**: The `packages/` directory is required. Ora looks for `.repo` files specifically in this directory.
+**Important**: The `ora-registry/` directory is required. Ora looks for `.repo` files specifically in this directory.
 
 After creating your registry:
 
@@ -608,11 +608,11 @@ After creating your registry:
 mkdir my-registry && cd my-registry
 git init
 
-# 2. Create packages directory
-mkdir packages
+# 2. Create ora-registry directory
+mkdir ora-registry
 
-# 3. Add .repo files in packages/
-cat > packages/ripgrep.repo << 'EOF'
+# 3. Add .repo files in ora-registry/
+cat > ora-registry/ripgrep.repo << 'EOF'
 name = "ripgrep"
 ...
 EOF
@@ -697,7 +697,7 @@ When creating a `.repo` file, follow these debugging steps to catch issues early
 
 ```bash
 # Check if the TOML is valid
-ora validate packages/mypackage.repo
+ora validate ora-registry/mypackage.repo
 ```
 
 This checks:
@@ -723,7 +723,7 @@ Common issues:
 Use `RUST_LOG=debug` to see exactly what URLs Ora generates:
 
 ```bash
-RUST_LOG=debug ora install --repo packages/mypackage.repo
+RUST_LOG=debug ora install --repo ora-registry/mypackage.repo
 ```
 
 Look for lines like:
@@ -798,7 +798,7 @@ format = "multi-hash"  # or "single-hash" or "sha256sum"
 
 ```bash
 # Try installing
-ora install --repo packages/mypackage.repo
+ora install --repo ora-registry/mypackage.repo
 
 # Check if binary was installed
 ls -lah ~/.local/bin/mybinary
@@ -807,7 +807,7 @@ ls -lah ~/.local/bin/mybinary
 mybinary --version
 
 # Check logs for warnings
-RUST_LOG=warn ora install --repo packages/mypackage.repo
+RUST_LOG=warn ora install --repo ora-registry/mypackage.repo
 ```
 
 ### Common Debug Patterns
