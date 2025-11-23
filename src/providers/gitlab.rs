@@ -70,9 +70,12 @@ impl VersionProvider for GitlabProvider {
         vars.insert("os".to_string(), os.to_string());
         vars.insert("arch".to_string(), arch.to_string());
 
-        if let Some(url_template) = &self.config.source.download.url {
+        let download_config = self.config.source.download.as_ref()
+            .context("No download configuration found")?;
+
+        if let Some(url_template) = &download_config.url {
             Ok(resolve_template_safe(url_template, &vars)?)
-        } else if let Some(urls) = &self.config.source.download.urls {
+        } else if let Some(urls) = &download_config.urls {
             let platform_key = format!("{}_{}", os, arch);
             urls.get(&platform_key)
                 .cloned()

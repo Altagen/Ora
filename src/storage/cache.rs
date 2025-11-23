@@ -8,8 +8,22 @@ pub struct Cache;
 
 impl Cache {
     pub fn download_path(filename: &str) -> Result<PathBuf> {
+        // Validate filename
+        if filename.is_empty() {
+            anyhow::bail!("Cannot create download path: filename is empty");
+        }
+
         let cache_dir = Paths::cache_dir()?;
         let downloads_dir = cache_dir.join("downloads");
+
+        // Ensure downloads directory exists and is actually a directory
+        if downloads_dir.exists() && !downloads_dir.is_dir() {
+            anyhow::bail!(
+                "Downloads path exists but is not a directory: {}",
+                downloads_dir.display()
+            );
+        }
+
         std::fs::create_dir_all(&downloads_dir)?;
         Ok(downloads_dir.join(filename))
     }
