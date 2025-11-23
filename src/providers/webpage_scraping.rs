@@ -45,7 +45,11 @@ impl WebpageScrapingProvider {
         std::fs::create_dir_all(&cache_dir)?;
 
         // Create unique cache file based on discovery URL
-        let version_config = self.config.source.version.as_ref()
+        let version_config = self
+            .config
+            .source
+            .version
+            .as_ref()
             .context("version discovery config required for webpage-scraping")?;
 
         let hash = format!("{:x}", md5::compute(&version_config.discovery_url));
@@ -109,7 +113,11 @@ impl WebpageScrapingProvider {
 
     /// Scrape URLs from webpage
     async fn scrape_urls(&mut self) -> Result<Vec<CachedUrl>> {
-        let version_config = self.config.source.version.as_ref()
+        let version_config = self
+            .config
+            .source
+            .version
+            .as_ref()
             .context("version discovery config required for webpage-scraping")?;
 
         log::info!("Scraping URLs from: {}", version_config.discovery_url);
@@ -117,19 +125,25 @@ impl WebpageScrapingProvider {
         // Fetch HTML content
         let html = self.client.get_text(&version_config.discovery_url).await?;
 
-        log::debug!("Received HTML: {} bytes, first 200 chars: {}",
+        log::debug!(
+            "Received HTML: {} bytes, first 200 chars: {}",
             html.len(),
-            &html.chars().take(200).collect::<String>());
+            &html.chars().take(200).collect::<String>()
+        );
 
         // Extract URLs using regex
-        let url_pattern = version_config.url_pattern.as_ref()
+        let url_pattern = version_config
+            .url_pattern
+            .as_ref()
             .context("url_pattern required for webpage-scraping")?;
 
         let url_regex = crate::utils::regex::build_safe_regex(url_pattern)
             .context("Failed to build URL regex")?;
 
         // Extract version using regex
-        let version_pattern = version_config.version_pattern.as_ref()
+        let version_pattern = version_config
+            .version_pattern
+            .as_ref()
             .context("version_pattern required for webpage-scraping")?;
 
         let version_regex = crate::utils::regex::build_safe_regex(version_pattern)
@@ -237,15 +251,16 @@ impl VersionProvider for WebpageScrapingProvider {
         let urls = provider.get_urls().await?;
 
         // Extract unique versions
-        let mut version_set: std::collections::HashSet<String> = urls
-            .iter()
-            .map(|u| u.version.clone())
-            .collect();
+        let mut version_set: std::collections::HashSet<String> =
+            urls.iter().map(|u| u.version.clone()).collect();
 
         let mut versions: Vec<String> = version_set.drain().collect();
 
         log::debug!("Total unique versions found: {}", versions.len());
-        log::debug!("Before sorting (first 5): {:?}", &versions[..versions.len().min(5)]);
+        log::debug!(
+            "Before sorting (first 5): {:?}",
+            &versions[..versions.len().min(5)]
+        );
 
         // Sort versions in descending order (newest first) using semantic versioning
         versions.sort_by(|a, b| {
@@ -254,21 +269,27 @@ impl VersionProvider for WebpageScrapingProvider {
                 (Ok(v_a), Ok(v_b)) => {
                     log::trace!("Comparing semver: {} vs {} => {:?}", a, b, v_b.cmp(&v_a));
                     v_b.cmp(&v_a) // Descending order (newest first)
-                },
+                }
                 (Err(_), _) => {
                     log::trace!("Failed to parse '{}' as semver, using string comparison", a);
                     b.cmp(a)
-                },
+                }
                 (_, Err(_)) => {
                     log::trace!("Failed to parse '{}' as semver, using string comparison", b);
                     b.cmp(a)
-                },
+                }
             };
             result
         });
 
-        log::info!("Sorted versions (first 10): {:?}", &versions[..versions.len().min(10)]);
-        log::debug!("Latest version selected: {}", versions.first().unwrap_or(&"none".to_string()));
+        log::info!(
+            "Sorted versions (first 10): {:?}",
+            &versions[..versions.len().min(10)]
+        );
+        log::debug!(
+            "Latest version selected: {}",
+            versions.first().unwrap_or(&"none".to_string())
+        );
 
         // Convert to Version structs
         let version_list: Vec<Version> = versions
@@ -290,22 +311,39 @@ impl VersionProvider for WebpageScrapingProvider {
         let urls = provider.get_urls().await?;
 
         // Get platform filters from config
-        let platform_config = self.config.platform.as_ref()
+        let platform_config = self
+            .config
+            .platform
+            .as_ref()
             .context("platform config with url_filters required for webpage-scraping")?;
 
         // Build platform key: e.g., "linux_x86_64"
         let platform_key = format!("{}_{}", os, arch);
 
         // Get the URL filter for this platform
-        let url_filter = platform_config.url_filters.get(&platform_key)
-            .context(format!("No URL filter found for platform: {}", platform_key))?;
+        let url_filter = platform_config
+            .url_filters
+            .get(&platform_key)
+            .context(format!(
+                "No URL filter found for platform: {}",
+                platform_key
+            ))?;
 
-        log::debug!("Looking for version={}, platform={}, filter={}", version, platform_key, url_filter);
+        log::debug!(
+            "Looking for version={}, platform={}, filter={}",
+            version,
+            platform_key,
+            url_filter
+        );
 
         // Find matching URL
-        let matching_url = urls.iter()
+        let matching_url = urls
+            .iter()
             .find(|u| u.version == version && u.platform.contains(url_filter))
-            .context(format!("No URL found for version={}, platform={}", version, url_filter))?;
+            .context(format!(
+                "No URL found for version={}, platform={}",
+                version, url_filter
+            ))?;
 
         Ok(matching_url.url.clone())
     }

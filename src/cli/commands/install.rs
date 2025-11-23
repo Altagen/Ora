@@ -132,7 +132,10 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
             .filter(|v| !v.prerelease)
             .max_by(|a, b| {
                 // Use semver comparison if possible, fallback to string comparison
-                match (semver::Version::parse(&a.tag), semver::Version::parse(&b.tag)) {
+                match (
+                    semver::Version::parse(&a.tag),
+                    semver::Version::parse(&b.tag),
+                ) {
                     (Ok(v_a), Ok(v_b)) => v_a.cmp(&v_b),
                     _ => a.tag.cmp(&b.tag),
                 }

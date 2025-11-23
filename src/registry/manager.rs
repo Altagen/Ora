@@ -119,20 +119,22 @@ impl RegistryManager {
                 return Ok(());
             }
 
-            let enabled_registries: Vec<_> = config
-                .registries
-                .iter()
-                .filter(|r| r.enabled)
-                .collect();
+            let enabled_registries: Vec<_> =
+                config.registries.iter().filter(|r| r.enabled).collect();
 
             if enabled_registries.is_empty() {
                 println!("No enabled registries to sync.");
                 return Ok(());
             }
 
-            println!("Syncing {} registr{}...",
+            println!(
+                "Syncing {} registr{}...",
                 enabled_registries.len(),
-                if enabled_registries.len() == 1 { "y" } else { "ies" }
+                if enabled_registries.len() == 1 {
+                    "y"
+                } else {
+                    "ies"
+                }
             );
 
             for registry in enabled_registries {
@@ -390,8 +392,13 @@ impl RegistryManager {
 
         if !ora_registry_dir.exists() {
             println!("✗ Missing 'ora-registry/' directory");
-            println!("  A valid registry must contain an 'ora-registry/' directory with .repo files");
-            anyhow::bail!("Registry '{}' is missing the required 'ora-registry/' directory", name);
+            println!(
+                "  A valid registry must contain an 'ora-registry/' directory with .repo files"
+            );
+            anyhow::bail!(
+                "Registry '{}' is missing the required 'ora-registry/' directory",
+                name
+            );
         }
 
         println!("✓ 'ora-registry/' directory exists");
@@ -414,7 +421,8 @@ impl RegistryManager {
             println!("⚠️  Warning: No .repo files found in registry directory");
             println!("  This registry appears to be empty");
         } else {
-            println!("✓ Found {} package definition{}",
+            println!(
+                "✓ Found {} package definition{}",
                 repo_files.len(),
                 if repo_files.len() == 1 { "" } else { "s" }
             );

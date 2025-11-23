@@ -158,7 +158,9 @@ impl RegistrySync {
         builder.fetch_options(fetch_options);
 
         log::debug!("Using shallow clone (depth=1) for security");
-        builder.clone(url, dest).context("Failed to clone repository")?;
+        builder
+            .clone(url, dest)
+            .context("Failed to clone repository")?;
 
         // Check repository size after cloning
         Self::check_repo_size(dest)?;
@@ -175,15 +177,12 @@ impl RegistrySync {
         let size_mb = size_bytes / (1024 * 1024);
 
         // Load config to get max size limit
-        let config = tokio::runtime::Handle::try_current()
-            .ok()
-            .and_then(|_| {
-                tokio::task::block_in_place(|| {
-                    tokio::runtime::Handle::current().block_on(async {
-                        crate::storage::database::load_global_config().await.ok()
-                    })
-                })
-            });
+        let config = tokio::runtime::Handle::try_current().ok().and_then(|_| {
+            tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current()
+                    .block_on(async { crate::storage::database::load_global_config().await.ok() })
+            })
+        });
 
         let max_size_mb = config
             .as_ref()
@@ -202,7 +201,11 @@ impl RegistrySync {
             );
         }
 
-        log::debug!("Repository size: {} MB (limit: {} MB)", size_mb, max_size_mb);
+        log::debug!(
+            "Repository size: {} MB (limit: {} MB)",
+            size_mb,
+            max_size_mb
+        );
         Ok(())
     }
 
