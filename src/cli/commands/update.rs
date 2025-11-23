@@ -28,19 +28,32 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
         };
 
         // Parse registry_source to determine how to load the .repo file
-        let (repo_file_path, registry_name) = if let Some(file_path) = installed.registry_source.strip_prefix("file:") {
-            // Package was installed from a local .repo file
-            log::info!("Package '{}' was installed from local file: {}", package_name, file_path);
-            (Some(file_path.to_string()), None)
-        } else if let Some(reg_name) = installed.registry_source.strip_prefix("registry:") {
-            // Package was installed from a registry
-            log::info!("Package '{}' was installed from registry: {}", package_name, reg_name);
-            (None, Some(reg_name.to_string()))
-        } else {
-            log::warn!("Unknown registry_source format for '{}': {}", package_name, installed.registry_source);
-            log::warn!("Attempting to find package in registries...");
-            (None, None)
-        };
+        let (repo_file_path, registry_name) =
+            if let Some(file_path) = installed.registry_source.strip_prefix("file:") {
+                // Package was installed from a local .repo file
+                log::info!(
+                    "Package '{}' was installed from local file: {}",
+                    package_name,
+                    file_path
+                );
+                (Some(file_path.to_string()), None)
+            } else if let Some(reg_name) = installed.registry_source.strip_prefix("registry:") {
+                // Package was installed from a registry
+                log::info!(
+                    "Package '{}' was installed from registry: {}",
+                    package_name,
+                    reg_name
+                );
+                (None, Some(reg_name.to_string()))
+            } else {
+                log::warn!(
+                    "Unknown registry_source format for '{}': {}",
+                    package_name,
+                    installed.registry_source
+                );
+                log::warn!("Attempting to find package in registries...");
+                (None, None)
+            };
 
         // Load repo config to check allow_insecure flag
         let (repo_config, _) = if let Some(repo_file) = &repo_file_path {
@@ -48,7 +61,12 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
             let content = match tokio::fs::read_to_string(repo_file).await {
                 Ok(c) => c,
                 Err(e) => {
-                    log::warn!("Could not read .repo file '{}' for package '{}': {}", repo_file, package_name, e);
+                    log::warn!(
+                        "Could not read .repo file '{}' for package '{}': {}",
+                        repo_file,
+                        package_name,
+                        e
+                    );
                     log::warn!("The original .repo file may have been moved or deleted.");
                     log::warn!("Skipping update for '{}'", package_name);
                     continue;
@@ -64,10 +82,16 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
             (config, installed.registry_source.clone())
         } else if let Some(reg_name) = &registry_name {
             // Find in specific registry
-            match RegistryManager::find_package_in_specific_registry(&package_name, reg_name).await {
+            match RegistryManager::find_package_in_specific_registry(&package_name, reg_name).await
+            {
                 Ok(result) => result,
                 Err(e) => {
-                    log::warn!("Could not find package '{}' in registry '{}': {}", package_name, reg_name, e);
+                    log::warn!(
+                        "Could not find package '{}' in registry '{}': {}",
+                        package_name,
+                        reg_name,
+                        e
+                    );
                     continue;
                 }
             }

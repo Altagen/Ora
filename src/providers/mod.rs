@@ -48,6 +48,8 @@ pub fn create_provider(config: &RepoConfig) -> Result<Arc<dyn VersionProvider>> 
             Ok(Arc::new(CustomApiProvider::new(api_url, config.clone())?))
         }
         ProviderType::DirectUrl => Ok(Arc::new(DirectUrlProvider::new(config.clone())?)),
-        ProviderType::WebpageScraping => Ok(Arc::new(WebpageScrapingProvider::new(config.clone())?)),
+        ProviderType::WebpageScraping => {
+            Ok(Arc::new(WebpageScrapingProvider::new(config.clone())?))
+        }
     }
 }

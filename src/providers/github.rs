@@ -65,7 +65,11 @@ impl VersionProvider for GithubProvider {
         vars.insert("os".to_string(), os.to_string());
         vars.insert("arch".to_string(), arch.to_string());
 
-        let download_config = self.config.source.download.as_ref()
+        let download_config = self
+            .config
+            .source
+            .download
+            .as_ref()
             .context("No download configuration found")?;
 
         if let Some(url_template) = &download_config.url {

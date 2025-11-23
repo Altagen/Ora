@@ -33,7 +33,9 @@ impl TestEnvironment {
 
         // Create a permissive security config for tests
         let security_config = config_dir.join("security.toml");
-        std::fs::write(&security_config, r#"
+        std::fs::write(
+            &security_config,
+            r#"
 [network.git]
 https_only = false
 allowed_schemes = ["https", "http", "file"]
@@ -46,7 +48,8 @@ max_redirects = 10
 [validation]
 max_archive_size = 10737418240  # 10GB
 max_extracted_size = 21474836480  # 20GB
-"#)?;
+"#,
+        )?;
 
         Ok(Self {
             _temp_dir: temp_dir,
