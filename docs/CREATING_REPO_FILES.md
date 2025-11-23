@@ -2,12 +2,17 @@
 
 This guide explains how to create `.repo` files for different types of software packages.
 
+> **New to creating .repo files?** Start with the **[Quick Start Guide](QUICK_START_REPO.md)** - create your first .repo file in 5 minutes! ⚡
+
 ## Table of Contents
 
 - [Basic Concepts](#basic-concepts)
 - [GitHub Releases Example](#github-releases-example)
 - [Step-by-Step: Prometheus](#step-by-step-prometheus)
+- [Webpage Scraping Provider](#webpage-scraping-provider)
+- [Step-by-Step: Windsurf IDE](#step-by-step-windsurf-ide)
 - [Common Patterns](#common-patterns)
+- [Debugging Your .repo File](#debugging-your-repo-file)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -27,7 +32,7 @@ A `.repo` file describes:
 name = "package-name"
 
 [source]
-type = "github-releases"  # or "gitlab-releases", "custom-api", "direct-url"
+type = "github-releases"  # or "gitlab-releases", "custom-api", "direct-url", "webpage-scraping"
 repo = "owner/repository"
 
 [source.download]
@@ -222,6 +227,364 @@ Ora will:
 
 ---
 
+## Webpage Scraping Provider
+
+### When to Use Webpage Scraping
+
+The `webpage-scraping` provider is designed for software that:
+
+- **Doesn't use GitHub/GitLab releases**: Instead, downloads are listed on a custom webpage
+- **Has dynamic URLs**: Download URLs include commit hashes or other dynamic identifiers
+- **Lacks a public API**: No JSON/REST API to query for versions
+- **Serves static HTML with download links**: Links are embedded in the HTML (not JavaScript-rendered)
+
+**Example use cases**:
+- VS Code derivatives (like Windsurf)
+- Projects with custom release pages
+- Software distributed via CDNs without API access
+
+### How Webpage Scraping Works
+
+The provider:
+
+1. **Fetches HTML**: Downloads the release page HTML content
+2. **Extracts URLs**: Uses regex to find all download URLs
+3. **Filters archives**: Keeps only `.zip`, `.tar.gz`, `.tar.xz`, `.tar.bz2`, `.tgz` files
+4. **Extracts versions**: Uses regex to extract version numbers from URLs
+5. **Detects platforms**: Identifies platform (e.g., `linux-x64`, `darwin-arm64`) from URL
+6. **Caches results**: Stores scraped data with TTL to avoid re-scraping
+
+### Caching Behavior
+
+To avoid re-scraping on every operation, the provider caches scraped URLs:
+
+- **Cache location**: `~/.cache/ora/scrapers/{hash}.json`
+- **Cache key**: MD5 hash of the discovery URL
+- **TTL (Time-To-Live)**: Configurable via global config (default: 1 hour)
+- **Cache invalidation**: Automatic after TTL expires
+
+Configure TTL in `~/.config/ora/config.toml`:
+
+```toml
+[scraper]
+ttl = 3600  # 1 hour in seconds
+```
+
+---
+
+## Step-by-Step: Windsurf IDE
+
+Let's create a `.repo` file for Windsurf IDE, which uses a custom releases page.
+
+### Step 1: Examine the Release Page
+
+Visit: `https://windsurf.com/editor/releases`
+
+This page lists downloads for all versions, but:
+- URLs are embedded in HTML/JSON
+- URLs contain commit hashes that change per version
+- No API endpoint available
+
+### Step 2: Analyze the URL Structure
+
+Example URLs from the page:
+
+```txt
+https://windsurf-stable.codeiumdata.com/linux-x64/stable/fb9435d9a.../Windsurf-linux-x64-1.12.35.tar.gz
+https://windsurf-stable.codeiumdata.com/darwin-arm64/stable/fb9435d9a.../Windsurf-darwin-arm64-1.12.35.zip
+https://windsurf-stable.codeiumdata.com/win32-x64-archive/stable/fb9435d9a.../Windsurf-win32-x64-1.12.35.zip
+```
+
+Observations:
+- Base domain: `windsurf-stable.codeiumdata.com`
+- Platform in URL: `linux-x64`, `darwin-arm64`, `win32-x64-archive`
+- Commit hash required: `fb9435d9a4d89c681a097318dfac4546738ce05c`
+- Version in filename: `1.12.35`
+- Archive formats: `.tar.gz` for Linux, `.zip` for macOS/Windows
+
+### Step 3: Create Regex Patterns
+
+We need two regex patterns:
+
+**1. URL Pattern** - Extracts full download URLs:
+
+```regex
+https://windsurf-stable\.codeiumdata\.com/[^/]+/stable/[^"\s]+?\.(zip|tar\.gz|tar\.xz|tar\.bz2|tgz)
+```
+
+This matches:
+- The base URL
+- Platform identifier (e.g., `linux-x64`)
+- **`/stable/` path** - ensures only stable releases are matched (not `/next/`)
+- Any characters (non-greedy) until...
+- One of the archive extensions
+
+> **Note**: Windsurf has two release channels:
+> - **stable** (`/stable/`): Production-ready releases
+> - **next** (`/next/`): Beta/preview releases with `+next.` in filename
+>
+> By including `/stable/` in the pattern, we only match stable releases.
+
+**2. Version Pattern** - Extracts version from URL:
+
+```regex
+([0-9]+\.[0-9]+\.[0-9]+)
+```
+
+This captures version numbers like `1.12.35`.
+
+### Step 4: Map Platform Identifiers
+
+Windsurf uses platform names in URLs (`linux-x64`) that differ from system names (`linux_amd64`):
+
+```toml
+[platform.url_filters]
+linux_amd64 = "linux-x64"
+darwin_aarch64 = "darwin-arm64"
+darwin_amd64 = "darwin-x64"
+windows_amd64 = "win32-x64-archive"
+windows_aarch64 = "win32-arm64-archive"
+```
+
+Format: `{system_os}_{normalized_arch} = "url_substring"`
+
+The provider searches for URLs containing the filter string (e.g., `"linux-x64"`).
+
+### Step 5: Identify Binaries
+
+Download and extract an archive to see the structure:
+
+```bash
+tar -tzf Windsurf-linux-x64-1.12.35.tar.gz | head -20
+```
+
+Output shows:
+
+```txt
+Windsurf/
+Windsurf/windsurf
+Windsurf/bin/windsurf
+Windsurf/resources/
+...
+```
+
+Binaries are in: `Windsurf/windsurf` and `Windsurf/bin/windsurf`
+
+### Step 6: Write the Complete .repo File
+
+```toml
+name = "windsurf"
+description = "Windsurf Editor - AI-powered IDE"
+homepage = "https://windsurf.com"
+
+[source]
+type = "webpage-scraping"
+
+[source.version]
+discovery_type = "html-scraping"
+discovery_url = "https://windsurf.com/editor/releases"
+
+# Regex to extract full download URLs from the HTML page
+# Only match URLs in the /stable/ path (not /next/)
+url_pattern = "https://windsurf-stable\\.codeiumdata\\.com/[^/]+/stable/[^\"\\s]+?\\.(zip|tar\\.gz|tar\\.xz|tar\\.bz2|tgz)"
+
+# Regex to extract version number from URLs (capture group 1)
+version_pattern = "([0-9]+\\.[0-9]+\\.[0-9]+)"
+
+[platform]
+# Map system platform identifiers to URL platform identifiers
+# Format: system_os_normalized_arch = "url_platform_identifier"
+[platform.url_filters]
+linux_amd64 = "linux-x64"
+darwin_aarch64 = "darwin-arm64"
+darwin_amd64 = "darwin-x64"
+windows_amd64 = "win32-x64-archive"
+windows_aarch64 = "win32-arm64-archive"
+
+[install]
+mode = "userland"
+
+# Binaries to install from the archive
+binaries = ["Windsurf/bin/windsurf"]
+
+# Post-install script to fix permissions on all Electron binaries and libraries
+post_install = '''
+#!/bin/bash
+set -e
+
+# Fix permissions on the Windsurf directory
+# Windsurf needs executable permissions on:
+# - Main binary (windsurf)
+# - Crash handler (chrome_crashpad_handler)
+# - Chrome sandbox (chrome-sandbox)
+# - All .so libraries (libffmpeg.so, libEGL.so, libGLESv2.so, etc.)
+
+# Make all binaries and libraries executable
+chmod +x "$INSTALL_DIR"/Windsurf/windsurf
+chmod +x "$INSTALL_DIR"/Windsurf/chrome_crashpad_handler
+chmod +x "$INSTALL_DIR"/Windsurf/chrome-sandbox
+chmod +x "$INSTALL_DIR"/Windsurf/*.so 2>/dev/null || true
+chmod +x "$INSTALL_DIR"/Windsurf/bin/* 2>/dev/null || true
+
+echo "✓ Windsurf installed successfully"
+echo "  - Run 'windsurf' to launch"
+'''
+
+[security]
+# Windsurf doesn't provide checksums, so we must allow insecure installation
+allow_insecure = true
+
+[metadata]
+license = "Proprietary"
+authors = ["Codeium"]
+tags = ["ide", "editor", "ai"]
+```
+
+### Step 7: Test the Installation
+
+```bash
+# Install Windsurf using the .repo file
+ora install windsurf --repo ./windsurf.repo --allow-insecure
+
+# Verify it works
+windsurf --version
+
+# Launch Windsurf
+windsurf
+```
+
+Ora will:
+
+1. Scrape the releases page for download URLs
+2. Cache the results for 1 hour (configurable)
+3. Show available versions
+4. Download the archive for your platform
+5. Extract binaries to `~/.local/bin/`
+6. Make them executable
+
+### Webpage Scraping Configuration Reference
+
+#### Required Fields
+
+```toml
+[source]
+type = "webpage-scraping"  # REQUIRED
+
+[source.version]
+discovery_url = "https://..."  # REQUIRED: URL of releases page
+discovery_type = "html-scraping"  # REQUIRED: Always "html-scraping"
+url_pattern = "regex"  # REQUIRED: Regex to extract download URLs
+version_pattern = "regex"  # REQUIRED: Regex to extract versions (with capture group)
+
+[platform.url_filters]
+{os}_{arch} = "substring"  # REQUIRED: Map platforms to URL substrings
+```
+
+#### Regex Pattern Tips
+
+**URL Pattern**:
+- Must match complete URLs including file extension
+- Use non-greedy matching (`+?`) to avoid matching too much
+- End with explicit file extensions: `\.(zip|tar\.gz|...)`
+- Escape dots in domains: `\.` not `.`
+
+**Version Pattern**:
+- Must include a capture group `(...)` for the version
+- Common pattern: `([0-9]+\.[0-9]+\.[0-9]+)` for semver
+- The captured group becomes the version identifier
+
+**Example patterns**:
+
+```toml
+# Match URLs ending with archive extensions
+url_pattern = "https://cdn\\.example\\.com/[^\"\\s]+?\\.(zip|tar\\.gz)"
+
+# Match semantic versions (1.2.3)
+version_pattern = "([0-9]+\\.[0-9]+\\.[0-9]+)"
+
+# Match versions with optional patch (1.2 or 1.2.3)
+version_pattern = "([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+```
+
+#### URL Filters
+
+URL filters map system platforms to URL substrings:
+
+```toml
+[platform.url_filters]
+# Format: {normalized_os}_{normalized_arch} = "url_substring"
+
+# Linux
+linux_amd64 = "linux-x64"      # Matches URLs containing "linux-x64"
+linux_arm64 = "linux-arm64"
+
+# macOS
+darwin_amd64 = "darwin-x64"    # Also matches "mac-x64", "osx-x64"
+darwin_arm64 = "darwin-arm64"  # Also matches "mac-arm64", "apple-silicon"
+
+# Windows
+windows_amd64 = "win32-x64"
+windows_arm64 = "win32-arm64"
+```
+
+**How it works**:
+1. Ora detects system platform (e.g., `linux` + `amd64`)
+2. Looks up the filter: `linux_amd64 = "linux-x64"`
+3. Searches scraped URLs for those containing `"linux-x64"`
+4. Returns the first matching URL for that version
+
+#### Caching Configuration
+
+Global config (`~/.config/ora/config.toml`):
+
+```toml
+[scraper]
+# TTL in seconds (default: 3600 = 1 hour)
+ttl = 3600
+
+# Set to 0 to disable caching (not recommended)
+# ttl = 0
+
+# Increase for stable releases (e.g., 24 hours)
+# ttl = 86400
+```
+
+Cache files are stored in: `~/.cache/ora/scrapers/{hash}.json`
+
+To force re-scraping:
+
+```bash
+# Delete cache file
+rm ~/.cache/ora/scrapers/*.json
+
+# Or reduce TTL temporarily
+ora install --repo windsurf.repo
+```
+
+### Webpage Scraping Limitations
+
+**What it can handle**:
+- ✅ Static HTML with embedded links
+- ✅ Pages served with curl-friendly user agents
+- ✅ URLs in JSON embedded in HTML
+- ✅ Multiple versions on one page
+
+**What it cannot handle**:
+- ❌ JavaScript-rendered content (requires browser)
+- ❌ Login-protected downloads
+- ❌ CAPTCHA-protected pages
+- ❌ Dynamic content loaded after page load
+
+**If the page uses JavaScript**:
+The webpage-scraping provider uses a curl-like user agent (`curl/8.0.0`) which causes many modern sites to serve static HTML instead of JavaScript-heavy SPA versions. This usually works well for release pages.
+
+If it doesn't work:
+1. Check if there's an API endpoint (use DevTools Network tab)
+2. Consider using `custom-api` provider instead
+3. Contact the project to request an API or static release page
+
+---
+
 ## Where to Create .repo Files
 
 When creating a registry, organize your `.repo` files like this:
@@ -322,6 +685,174 @@ url = "https://github.com/owner/repo/releases/download/v{version}/binary-{os}-{a
 [install]
 binaries = ["binary-{os}-{arch}"]
 direct_binary = true
+```
+
+---
+
+## Debugging Your .repo File
+
+When creating a `.repo` file, follow these debugging steps to catch issues early:
+
+### Step 1: Validate Syntax
+
+```bash
+# Check if the TOML is valid
+ora validate packages/mypackage.repo
+```
+
+This checks:
+- ✓ Valid TOML syntax
+- ✓ Required fields present
+- ✓ URL templates are well-formed
+- ⚠️ Warns about `allow_insecure = true`
+
+### Step 2: Check What Versions Are Available
+
+```bash
+# For GitHub releases, manually check what Ora sees
+curl -s https://api.github.com/repos/owner/repo/releases | jq '.[].tag_name' | head -10
+```
+
+Common issues:
+- Tags use `v` prefix (e.g., `v1.0.0`) → Ora strips this automatically
+- Releases are marked as "pre-release" → May not be detected
+- No releases exist → Check if it's using a different versioning system
+
+### Step 3: Test Download URL Construction
+
+Use `RUST_LOG=debug` to see exactly what URLs Ora generates:
+
+```bash
+RUST_LOG=debug ora install --repo packages/mypackage.repo
+```
+
+Look for lines like:
+```
+[DEBUG] Constructed download URL: https://github.com/...
+[DEBUG] Platform detected: linux_x86_64
+[DEBUG] After mapping: os=linux, arch=amd64
+```
+
+### Step 4: Manually Test a Download URL
+
+Copy the URL from debug output and test it:
+
+```bash
+# Test if the URL works
+curl -I "https://github.com/owner/repo/releases/download/v1.0.0/package-1.0.0-linux-amd64.tar.gz"
+
+# Should return: HTTP/2 302 (redirect) or 200 (OK)
+# If 404: Your URL template or mappings are wrong
+```
+
+### Step 5: Check Archive Contents
+
+Download an archive and inspect its structure:
+
+```bash
+# Download
+curl -L -o test.tar.gz "https://..."
+
+# List contents
+tar -tzf test.tar.gz | head -20
+
+# Look for:
+# - Are binaries in a subfolder? Use glob patterns like "package-*/binary"
+# - Are there multiple binaries? List them all in [install.binaries]
+# - Are there spaces or special characters? May need escaping
+```
+
+### Step 6: Check Checksum File Format
+
+Download the checksum file and verify its format:
+
+```bash
+curl -L "https://github.com/owner/repo/releases/download/v1.0.0/checksums.txt"
+```
+
+**Format identification**:
+
+1. **multi-hash** - Multiple lines with `hash filename`:
+```
+abc123...  package-linux-amd64.tar.gz
+def456...  package-macos-arm64.tar.gz
+```
+
+2. **single-hash** - One hash only (one file per checksum):
+```
+abc123def456789...
+```
+
+3. **sha256sum** - Standard format with two spaces:
+```
+abc123...  package.tar.gz
+```
+
+Update your `.repo` accordingly:
+```toml
+[security.checksum]
+format = "multi-hash"  # or "single-hash" or "sha256sum"
+```
+
+### Step 7: Test Installation End-to-End
+
+```bash
+# Try installing
+ora install --repo packages/mypackage.repo
+
+# Check if binary was installed
+ls -lah ~/.local/bin/mybinary
+
+# Test if it runs
+mybinary --version
+
+# Check logs for warnings
+RUST_LOG=warn ora install --repo packages/mypackage.repo
+```
+
+### Common Debug Patterns
+
+**Pattern 1: URL returns 404**
+```bash
+# Your URL template
+url = "https://github.com/{repo}/releases/download/v{version}/{name}-{version}.{os}-{arch}.tar.gz"
+
+# Test with actual values
+# Replace variables manually:
+# {repo} = "owner/repo"
+# {version} = "1.0.0"
+# {os} = "linux"
+# {arch} = "amd64"
+
+# Result: https://github.com/owner/repo/releases/download/v1.0.0/name-1.0.0.linux-amd64.tar.gz
+
+# Visit GitHub releases page and compare with actual asset names
+# Adjust template or add platform mappings
+```
+
+**Pattern 2: Binary not found after install**
+```bash
+# Check extraction worked
+ls -R ~/.cache/ora/downloads/
+
+# If binary is there but not in ~/.local/bin:
+# → Wrong glob pattern in [install.binaries]
+
+# Fix by using a more general pattern:
+binaries = ["**/mybinary"]  # Finds mybinary anywhere in archive
+```
+
+**Pattern 3: Checksum mismatch**
+```bash
+# Download the archive and compute hash manually
+curl -L -o test.tar.gz "https://..."
+sha256sum test.tar.gz
+
+# Compare with checksum file
+curl -L "https://.../checksums.txt"
+
+# If they match → format issue in .repo
+# If they don't match → upstream problem or wrong file
 ```
 
 ---

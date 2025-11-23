@@ -152,11 +152,71 @@ Configured registries:
 
 After adding a registry, sync it to download the latest package definitions:
 
+**Sync all registries:**
 ```bash
 ora registry sync
 ```
 
-This clones or updates all registered repositories.
+**Sync a specific registry:**
+```bash
+ora registry sync my-registry
+```
+
+Example output:
+```
+Syncing 2 registries...
+  → Syncing 'main-registry'...
+    ✓ Synced successfully
+  → Syncing 'my-registry'...
+    ✓ Synced successfully
+
+Sync complete!
+```
+
+This clones or updates registered repositories from their remote sources.
+
+### Verify Registry
+
+Verify the integrity and validity of a registry:
+
+```bash
+ora registry verify my-registry
+```
+
+This performs comprehensive validation including:
+1. **Configuration Check** - Registry exists in config
+2. **Local Sync Check** - Registry has been synced locally
+3. **Git Repository Validation** - Valid git repository with correct remote URL
+4. **Structure Validation** - Required `packages/` directory exists
+5. **Package Count** - Lists available `.repo` files
+
+Example output:
+```
+Verifying registry: my-registry
+
+✓ Registry found in configuration
+  Name: my-registry
+  URL: https://github.com/username/ora-registry.git
+  Trust Level: Public
+  Enabled: true
+✓ Registry synced locally
+  Path: "/home/user/.cache/ora/registries/my-registry"
+✓ Valid git repository
+  Commit: 61e1b655924b03daf00ff578c600655b850f6610
+  Remote: https://github.com/username/ora-registry.git
+✓ 'packages/' directory exists
+✓ Found 3 package definitions
+  1. ripgrep
+  2. bat
+  3. fd
+
+✓ Registry 'my-registry' verification complete!
+```
+
+**Common issues:**
+- **Registry not synced**: Run `ora registry sync <name>` first
+- **Invalid git repository**: Re-sync or remove and re-add the registry
+- **Missing packages/ directory**: Registry may be misconfigured
 
 ### Remove a Registry
 

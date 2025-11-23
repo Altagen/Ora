@@ -6,22 +6,24 @@ Comprehensive test suite for the Ora package manager.
 
 ```
 tests/
-├── e2e_test.sh              # End-to-end shell script tests
-├── integration/             # Rust integration tests
+├── e2e_test.sh                 # End-to-end shell script tests (24 tests)
+├── e2e_advanced_test.sh        # Advanced E2E tests (14 tests)
+├── integration/                # Rust integration tests
 │   ├── helpers/
-│   │   ├── mock_registry.rs  # Mock git registry
-│   │   └── test_env.rs       # Isolated test environment
-│   ├── test_install.rs       # Installation tests
-│   ├── test_registry.rs      # Registry management tests
-│   └── test_uninstall.rs     # Uninstallation tests
+│   │   ├── mock_registry.rs   # Mock git registry
+│   │   └── test_env.rs        # Isolated test environment
+│   ├── integration_registry.rs # Registry sync/verify tests (10 tests)
+│   ├── test_install.rs        # Installation tests
+│   ├── test_registry.rs       # Registry management tests
+│   └── test_uninstall.rs      # Uninstallation tests
 └── fixtures/
-    └── repo_files/          # Test .repo files
-        ├── windman.repo      # Your project
-        ├── windsurf.repo     # Custom provider
-        ├── prometheus.repo   # GitHub with checksums
-        ├── ripgrep.repo      # GitHub standard
-        ├── jq.repo           # Simple binary
-        └── fd.repo           # Alternative find
+    └── repo_files/            # Test .repo files
+        ├── windman.repo       # Your project
+        ├── windsurf.repo      # Custom provider
+        ├── prometheus.repo    # GitHub with checksums
+        ├── ripgrep.repo       # GitHub standard
+        ├── jq.repo            # Simple binary
+        └── fd.repo            # Alternative find
 ```
 
 ## Running Tests
@@ -45,12 +47,17 @@ cargo test --test '*'
 
 # Run specific test file
 cargo test --test test_registry
+cargo test --test integration_registry  # Registry sync/verify tests
 
 # Run with output
 cargo test --test test_install -- --nocapture
 
 # Run ignored tests (requires network, downloads real binaries)
 cargo test --test test_install -- --ignored --nocapture
+
+# Run specific registry tests
+cargo test --test integration_registry registry_sync
+cargo test --test integration_registry registry_verify
 ```
 
 ### End-to-End Tests (Full Workflow)
@@ -60,7 +67,7 @@ cargo test --test test_install -- --ignored --nocapture
 ./tests/run_all_e2e.sh
 
 # Or run individual test suites:
-./tests/e2e_test.sh              # Basic E2E tests (17 tests)
+./tests/e2e_test.sh              # Basic E2E tests (24 tests)
 ./tests/e2e_advanced_test.sh     # Advanced E2E tests (14 tests)
 
 # Specify custom binary location
@@ -68,9 +75,9 @@ ORA_BINARY=/path/to/ora ./tests/run_all_e2e.sh
 ```
 
 The complete test suite includes:
-- **Basic tests** (17): Core functionality, all commands, error handling
+- **Basic tests** (24): Core functionality, all commands, error handling, registry sync/verify
 - **Advanced tests** (14): Multi-registry, persistence, stress testing
-- **Total**: 31 end-to-end test cases
+- **Total**: 38 end-to-end test cases
 
 All tests:
 1. Create isolated test environments (no impact on your system)
@@ -232,6 +239,16 @@ jobs:
 
 ### Rust Integration Tests
 - ✅ Registry management (add, list, remove, update)
+- ✅ Registry sync:
+  - ✅ Sync all registries
+  - ✅ Sync specific registry
+  - ✅ Sync non-existent registry
+  - ✅ Sync with no registries configured
+- ✅ Registry verify:
+  - ✅ Verify valid registry (full validation)
+  - ✅ Verify non-existent registry
+  - ✅ Verify non-synced registry
+  - ✅ Verify shows package count
 - ✅ Package search
 - ✅ Package info
 - ✅ Installation (from .repo file and registry)
@@ -239,12 +256,21 @@ jobs:
 - ✅ Error handling
 - ✅ Platform detection
 
-### E2E Binary Tests (31 total)
+### E2E Binary Tests (38 total)
 
-**Basic Tests (17)**:
+**Basic Tests (24)**:
 - ✅ Help and version commands
 - ✅ Config management (show, verify, init)
-- ✅ Registry operations (add, remove, list, sync)
+- ✅ Registry operations (add, remove, list)
+- ✅ Registry sync command:
+  - ✅ Sync with error handling (Test 17)
+  - ✅ Sync with no registries (Test 18)
+  - ✅ Sync command exists (Test 19)
+- ✅ Registry verify command:
+  - ✅ Verify non-existent registry (Test 20)
+  - ✅ Verify valid registry (Test 22)
+  - ✅ Verify shows detailed information (Test 23)
+  - ✅ Verify shows package count (Test 24)
 - ✅ Package search with no registries
 - ✅ Package list (empty state)
 - ✅ Package uninstall (non-existent)
