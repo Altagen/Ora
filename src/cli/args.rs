@@ -139,6 +139,11 @@ pub enum RegistryCommand {
     Remove {
         name: String,
     },
+    /// Sync registries (download/update package definitions)
+    Sync {
+        /// Optional registry name to sync (syncs all if not specified)
+        name: Option<String>,
+    },
     Update {
         name: Option<String>,
     },

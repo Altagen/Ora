@@ -1451,6 +1451,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "md5"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
+
+[[package]]
 name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,7 +1686,7 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
 name = "ora"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -1696,6 +1702,7 @@ dependencies = [
  "glob",
  "indicatif",
  "log",
+ "md5",
  "mockito",
  "platforms",
  "predicates",
@@ -1703,6 +1710,7 @@ dependencies = [
  "reqwest",
  "rustls 0.22.4",
  "rustls-native-certs",
+ "semver",
  "sequoia-openpgp",
  "serde",
  "serde_json",
@@ -2231,6 +2239,12 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
+
+[[package]]
+name = "semver"
+version = "1.0.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
 
 [[package]]
 name = "sequoia-openpgp"

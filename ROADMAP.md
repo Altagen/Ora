@@ -1,99 +1,164 @@
 # Ora Roadmap
 
-This document outlines potential improvements organized by category. Items listed here are not commitments or promises - they represent areas that could be enhanced if contributors are interested.
+This document provides an overview of Ora's development roadmap. For detailed information, see the [ROADMAP/](ROADMAP/) directory.
 
 ---
 
-## Security
+## Quick Links
 
-### Critical
-
-- **GPG Signature Verification**: Full implementation of package signature verification
-- **Script Sandboxing**: Isolate post-installation scripts (bubblewrap, seccomp, containers)
-- **HTTP Redirect Enforcement**: Actually enforce `allow_redirects` configuration
-- **Template Injection Fixes**: Replace unsafe `resolve_template()` in GitLab and CustomAPI providers
-- **Environment Variable Filtering**: Filter sensitive env vars from post-install scripts
-
-### High Priority
-
-- **TLS Certificate Pinning**: Implement the configured certificate pinning validation
-- **TOCTOU Race Conditions**: Fix time-of-check-time-of-use issues in deployer/extractor
-- **Audit Log Integrity**: Add HMAC or signatures to prevent tampering
-- **Binary Signature Verification**: Verify codesign (macOS), Authenticode (Windows), ELF signatures (Linux)
-- **Package Shadowing Prevention**: Enforce `fail_on_ambiguous_package` configuration
-
-### Medium Priority
-
-- **Git Force Checkout**: Respect `allow_force_checkout` configuration
-- **JSON/TOML Size Limits**: Enforce configured size limits in HTTP client
-- **Content-Type Validation**: Validate HTTP response content types
-- **Rate Limiting**: Add network request rate limiting
-- **Checksum Parsing**: Improve filename matching (exact match, not ends_with)
-
-### Low Priority
-
-- **Regex Execution Timeout**: Hard timeout for regex operations
-- **Archive Magic Bytes**: Detect archive type by content, not just extension
-- **File Permissions Validation**: Validate deployed binary permissions are appropriate
+- **[Recently Completed](ROADMAP/COMPLETED.md)** - Features and improvements completed recently
+- **[Security](ROADMAP/SECURITY.md)** - Security improvements and hardening (Critical Priority)
+- **[Features](ROADMAP/FEATURES.md)** - New features and enhancements
+- **[Offline Mode](ROADMAP/OFFLINE.md)** - Support for air-gapped and offline environments
+- **[Architecture](ROADMAP/ARCHITECTURE.md)** - Architectural improvements and refactoring
+- **[Documentation](ROADMAP/DOCUMENTATION.md)** - Documentation improvements
+- **[Dependencies](ROADMAP/DEPENDENCIES.md)** - Dependency management and updates
 
 ---
 
-## Features
+## Recent Highlights ✅
 
-### Package Management
+### Update Flow for --repo Packages
+Fixed `ora update` to work with packages installed from local .repo files by using the `registry_source` field.
 
-- **Reproducible Builds**: Support for verifying reproducible builds
-- **SLSA Provenance**: Support for provenance attestations
-- **Version Pinning**: Lockfile mechanism for exact version/checksum pinning
-- **Self-Update**: Secure update mechanism for Ora itself (`ora self-update`)
-- **Download Resume**: Support resuming interrupted downloads
+### Automatic Directory Cleanup
+Uninstall now removes empty parent directories automatically after package removal.
 
-### Registry
+### Webpage Scraping Provider
+Full support for discovering package versions by scraping HTML pages with regex-based URL and version extraction.
 
-- **Registry Signing**: GPG signatures for registry repositories
-- **Multiple Registries**: Better handling of package conflicts across registries
-- **Private Registry Auth**: Authentication support for private registries
+### Windsurf Integration
+Complete support for Electron-based applications with proper permission handling for all required executables.
 
-### Developer Experience
-
-- **Antivirus Integration**: Optional integration with ClamAV, Windows Defender
-- **Better Error Messages**: More actionable error messages
-- **Progress Indicators**: Better download/install progress feedback
-- **Verbose Logging**: Structured logging with different verbosity levels
+See [ROADMAP/COMPLETED.md](ROADMAP/COMPLETED.md) for full details.
 
 ---
 
-## Architecture
+## Priority Areas
 
-- **Privilege Separation**: Separate components with different privilege levels
-- **Modular Providers**: Plugin system for custom package sources
-- **Configuration Validation**: Enforce minimum security baseline
-- **Offline Mode**: Better support for air-gapped environments
+### 🔴 Critical: Security Hardening
+
+Security is the highest priority for Ora. Key areas:
+
+- **GPG Signature Verification** - Verify package authenticity
+- **Script Sandboxing** - Isolate post-install scripts
+- **HTTP Redirect Enforcement** - Prevent redirect-based attacks
+- **Template Injection Fixes** - Secure template resolution
+- **Environment Variable Filtering** - Protect credentials
+
+See [ROADMAP/SECURITY.md](ROADMAP/SECURITY.md) for complete security roadmap.
+
+---
+
+### 🟡 High: Core Features
+
+Essential features for a robust package manager:
+
+- **Offline Mode** - Support for air-gapped environments
+- **Version Pinning** - Lockfile mechanism for reproducibility
+- **SLSA Provenance** - Supply chain security attestations
+- **Registry Signing** - Cryptographic verification of registries
+- **Better Error Messages** - More actionable error feedback
+
+See [ROADMAP/FEATURES.md](ROADMAP/FEATURES.md) and [ROADMAP/OFFLINE.md](ROADMAP/OFFLINE.md) for details.
+
+---
+
+### 🟢 Medium: Architecture & Developer Experience
+
+Improvements to code quality and developer experience:
+
+- **Privilege Separation** - Separate components with different privilege levels
+- **Modular Providers** - Plugin system for custom package sources
+- **Progress Indicators** - Better download/install progress feedback
+- **Async/Concurrency** - Better parallelism and performance
+
+See [ROADMAP/ARCHITECTURE.md](ROADMAP/ARCHITECTURE.md) for details.
 
 ---
 
 ## Documentation
 
-- **Security Limitations**: Clear documentation of current security gaps
-- **Provider API**: Documentation for implementing custom providers
-- **Registry Setup**: Guide for setting up private registries
-- **Migration Guide**: Help users migrate from other package managers
+Comprehensive documentation is essential for adoption:
+
+- **Security Best Practices** - Guide for secure Ora usage
+- **Security Limitations** - Transparent disclosure of current gaps
+- **Provider API** - Documentation for custom provider development
+- **Registry Setup** - Guide for creating package registries
+- **Migration Guides** - Help users migrate from other package managers
+
+See [ROADMAP/DOCUMENTATION.md](ROADMAP/DOCUMENTATION.md) for details.
 
 ---
 
-## Dependencies
+## Contributing
 
-- **Update Dependencies**: Keep dependencies up to date
-  - Consider upgrading `zip` crate (0.6 → 0.7+)
-  - Monitor security advisories for `tar`, `git2`, `reqwest`
-- **Reduce Dependencies**: Evaluate if all dependencies are necessary
-- **Audit Trail**: Regular `cargo audit` runs
+This roadmap is not a commitment or timeline - items represent areas that could be enhanced if contributors are interested.
 
----
+**Interested in contributing?**
+- Pick any item from the roadmap
+- Open an issue to discuss your approach
+- Submit a PR with your implementation
+- Security fixes are always welcome and will be prioritized
 
-## Notes
-
-- This roadmap is not a commitment timeline
-- Items may be added, removed, or reprioritized
-- Community contributions welcome for any item
+**Priority Guidelines**:
 - Security fixes take priority over features
+- Items may be added, removed, or reprioritized
+- Community input is valued and welcome
+
+---
+
+## Roadmap Organization
+
+The roadmap is organized into thematic documents in the [ROADMAP/](ROADMAP/) directory:
+
+```
+ROADMAP/
+├── README.md           # Overview and organization
+├── COMPLETED.md        # Recently completed work
+├── SECURITY.md         # Security improvements (Critical/High/Medium/Low)
+├── FEATURES.md         # New features and enhancements
+├── OFFLINE.md          # Offline mode architecture and design
+├── ARCHITECTURE.md     # Architectural improvements
+├── DOCUMENTATION.md    # Documentation improvements
+└── DEPENDENCIES.md     # Dependency management
+```
+
+This organization allows for:
+- **Focused discussions** on specific areas
+- **Independent evolution** of different roadmap areas
+- **Easier tracking** of progress by theme
+- **Better discoverability** of related work
+
+---
+
+## Release Philosophy
+
+Ora follows [Semantic Versioning](https://semver.org/):
+- **Major** (x.0.0): Breaking changes
+- **Minor** (0.x.0): New features, backward compatible
+- **Patch** (0.0.x): Bug fixes, security updates
+
+**Security Updates**:
+- Security fixes are released immediately
+- Patch versions for critical vulnerabilities
+- Clear security advisories published
+
+**Feature Releases**:
+- Regular minor version releases
+- Deprecation warnings before breaking changes
+- Migration guides for major versions
+
+---
+
+## Community & Feedback
+
+- **Issues**: [github.com/ora-pm/ora/issues](https://github.com/ora-pm/ora/issues)
+- **Discussions**: [github.com/ora-pm/ora/discussions](https://github.com/ora-pm/ora/discussions)
+- **Security**: security@ora-pm.dev (for security vulnerabilities)
+
+---
+
+## License
+
+Ora is open source software. Contributions are welcome under the project's license terms.

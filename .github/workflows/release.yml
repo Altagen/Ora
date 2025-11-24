@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - '*.*.*'
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -262,10 +260,6 @@ jobs:
           - [README](https://github.com/${{ github.repository }}/blob/$VERSION/README.md)
           - [Contributing Guide](https://github.com/${{ github.repository }}/blob/$VERSION/CONTRIBUTING.md)
           - [Security Configuration](https://github.com/${{ github.repository }}/blob/$VERSION/SECURITY_CONFIGURATION.md)
-
-          ## Full Changelog
-
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREVIOUS_VERSION...$VERSION
           TEMPLATE
 
           # Replace variables

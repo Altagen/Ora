@@ -206,6 +206,8 @@ mod tests {
                 discovery_type: DiscoveryType::Json,
                 json_path: Some("$.version".to_string()),
                 regex: None,
+                url_pattern: None,
+                version_pattern: None,
             },
             client: HttpClient::new().expect("Failed to create HTTP client in test"),
         };
@@ -231,6 +233,8 @@ mod tests {
                 discovery_type: DiscoveryType::Json,
                 json_path: Some("$.releases[*].version".to_string()),
                 regex: None,
+                url_pattern: None,
+                version_pattern: None,
             },
             client: HttpClient::new().expect("Failed to create HTTP client in test"),
         };

@@ -10,6 +10,8 @@ pub struct GlobalConfig {
     pub security: SecuritySettings,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub suppress_insecure_warnings: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scraper: Option<ScraperSettings>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -90,10 +92,17 @@ pub struct SecuritySettings {
     pub require_checksums: bool,
     #[serde(default)]
     pub require_signatures: bool,
+    /// Maximum allowed git repository size in MB (default: 1024 MB = 1 GB)
+    #[serde(default = "default_max_git_size_mb")]
+    pub max_git_size_mb: u64,
 }
 
 fn default_require_checksums() -> bool {
     true
+}
+
+fn default_max_git_size_mb() -> u64 {
+    1024 // 1 GB default limit
 }
 
 impl Default for SecuritySettings {
@@ -101,6 +110,18 @@ impl Default for SecuritySettings {
         Self {
             require_checksums: true,
             require_signatures: false,
+            max_git_size_mb: 1024,
         }
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ScraperSettings {
+    /// Cache TTL in seconds for webpage-scraping provider (default: 3600 = 1 hour)
+    #[serde(default = "default_scraper_ttl")]
+    pub ttl: Option<u64>,
+}
+
+fn default_scraper_ttl() -> Option<u64> {
+    Some(3600) // 1 hour
 }
