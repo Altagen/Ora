@@ -20,13 +20,14 @@ pub async fn execute(args: RegistryArgs) -> Result<()> {
         RegistryCommand::Remove { name } => {
             RegistryManager::remove_registry(name).await?;
         }
+        RegistryCommand::Sync { name } => {
+            RegistryManager::sync_registries(name).await?;
+        }
         RegistryCommand::Update { name } => {
             RegistryManager::update_registries(name).await?;
         }
         RegistryCommand::Verify { name } => {
-            log::warn!("Registry verification not yet fully implemented");
-            println!("Verifying registry: {}", name);
-            // TODO: Implement registry verification
+            RegistryManager::verify_registry(name).await?;
         }
         RegistryCommand::UpdatePin { name } => {
             log::warn!("Certificate pinning update not yet fully implemented");

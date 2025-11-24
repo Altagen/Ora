@@ -43,7 +43,7 @@ cargo install --git https://github.com/Altagen/Ora
 
 ```bash
 ora --version
-# Output: ora 0.1.0
+# Output: ora 0.2.0
 ```
 
 ---
@@ -103,13 +103,13 @@ A registry must have this structure:
 
 ```
 my-registry/
-└── packages/           # Required directory
+└── ora-registry/       # Required directory
     ├── ripgrep.repo
     ├── fd.repo
     └── jq.repo
 ```
 
-**Important**: The `packages/` directory is required. Ora searches for `.repo` files in this directory.
+**Important**: The `ora-registry/` directory is required. Ora searches for `.repo` files in this directory.
 
 ### How Search Works
 
@@ -152,11 +152,71 @@ Configured registries:
 
 After adding a registry, sync it to download the latest package definitions:
 
+**Sync all registries:**
 ```bash
 ora registry sync
 ```
 
-This clones or updates all registered repositories.
+**Sync a specific registry:**
+```bash
+ora registry sync my-registry
+```
+
+Example output:
+```
+Syncing 2 registries...
+  → Syncing 'main-registry'...
+    ✓ Synced successfully
+  → Syncing 'my-registry'...
+    ✓ Synced successfully
+
+Sync complete!
+```
+
+This clones or updates registered repositories from their remote sources.
+
+### Verify Registry
+
+Verify the integrity and validity of a registry:
+
+```bash
+ora registry verify my-registry
+```
+
+This performs comprehensive validation including:
+1. **Configuration Check** - Registry exists in config
+2. **Local Sync Check** - Registry has been synced locally
+3. **Git Repository Validation** - Valid git repository with correct remote URL
+4. **Structure Validation** - Required `ora-registry/` directory exists
+5. **Package Count** - Lists available `.repo` files
+
+Example output:
+```
+Verifying registry: my-registry
+
+✓ Registry found in configuration
+  Name: my-registry
+  URL: https://github.com/username/ora-registry.git
+  Trust Level: Public
+  Enabled: true
+✓ Registry synced locally
+  Path: "/home/user/.cache/ora/registries/my-registry"
+✓ Valid git repository
+  Commit: 61e1b655924b03daf00ff578c600655b850f6610
+  Remote: https://github.com/username/ora-registry.git
+✓ 'ora-registry/' directory exists
+✓ Found 3 package definitions
+  1. ripgrep
+  2. bat
+  3. fd
+
+✓ Registry 'my-registry' verification complete!
+```
+
+**Common issues:**
+- **Registry not synced**: Run `ora registry sync <name>` first
+- **Invalid git repository**: Re-sync or remove and re-add the registry
+- **Missing ora-registry/ directory**: Registry may be misconfigured
 
 ### Remove a Registry
 
@@ -392,19 +452,19 @@ cd ora-packages
 git init
 ```
 
-### 2. Create the packages/ Directory
+### 2. Create the ora-registry/ Directory
 
-Ora requires a `packages/` directory:
+Ora requires an `ora-registry/` directory:
 
 ```bash
-mkdir packages
+mkdir ora-registry
 ```
 
 ### 3. Add .repo Files
 
-Create `.repo` files in the `packages/` directory. See [Creating .repo Files](CREATING_REPO_FILES.md).
+Create `.repo` files in the `ora-registry/` directory. See [Creating .repo Files](CREATING_REPO_FILES.md).
 
-Example `packages/ripgrep.repo`:
+Example `ora-registry/ripgrep.repo`:
 
 ```toml
 name = "ripgrep"

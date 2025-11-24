@@ -1,24 +1,29 @@
-# Ora - Omni Repository for Archives
+<div align="center">
+  <img src="assets/ora-icon.png" alt="Ora Logo" width="200"/>
 
-A secure, decentralized package manager for pre-compiled binaries
+  # Ora - Omni Repository for Archives
 
-[![CI](https://github.com/Altagen/Ora/workflows/CI/badge.svg)](https://github.com/Altagen/Ora/actions)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/Altagen/Ora/releases)
+  A secure, decentralized package manager for pre-compiled binaries
+
+  [![CI](https://github.com/Altagen/Ora/workflows/CI/badge.svg)](https://github.com/Altagen/Ora/actions)
+  [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
+  [![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/Altagen/Ora/releases)
+</div>
 
 ---
 
 ## What is Ora
 
-Ora is a package manager for installing and managing pre-compiled binaries from diverse sources including GitHub Releases, GitLab, custom APIs, and direct URLs. It runs in userland by default (no root required), supports decentralized git-based registries, and enforces comprehensive security configurations to protect against supply chain attacks.
+Ora is a package manager for installing and managing pre-compiled binaries from diverse sources including GitHub Releases, GitLab, custom APIs, webpage scraping, and direct URLs. It runs in userland by default (no root required), supports both decentralized git-based registries and direct HTTPS registries, and enforces comprehensive security configurations to protect against supply chain attacks.
 
 Key features:
 
-- Multi-source support (GitHub, GitLab, custom APIs, direct URLs)
-- Security-focused with checksum verification, GPG signatures, SSRF prevention, and more
-- Decentralized git-based registries
-- Zero root required - installs to `~/.local` by default
-- Cross-platform with automatic OS/architecture detection
+- **Multi-source support**: GitHub Releases, GitLab, custom APIs, webpage scraping, direct URLs
+- **Dual registry modes**: Git-based collections or direct HTTPS endpoints
+- **Security-focused**: Checksum verification, GPG signatures, SSRF prevention, git bomb protection
+- **Zero root required**: Installs to `~/.local` by default
+- **Cross-platform**: Automatic OS/architecture detection
+- **Flexible**: Webpage scraping for software without APIs
 
 ---
 
@@ -96,18 +101,29 @@ cargo install --git https://github.com/Altagen/Ora
 
 ### Registry Management
 
+Ora supports two types of registries:
+
+- **Git Registry**: A git repository with multiple `.repo` files in `/ora-registry/` directory
+- **Direct URL Registry**: A single HTTPS endpoint serving one `.repo` file
+
 ```bash
-# Add a registry (git repository with .repo files)
+# Add a Git registry (collection of packages)
 ora registry add my-registry https://github.com/user/ora-packages.git
+
+# Add a Direct URL registry (single package)
+ora registry add windsurf https://example.com/packages/windsurf.repo
 
 # List configured registries
 ora registry list
 
-# Sync registries to get latest packages
+# Sync registries to get latest packages (Git registries only)
 ora registry sync
 
 # Remove a registry
 ora registry remove my-registry
+
+# Verify a registry structure
+ora registry verify my-registry
 ```
 
 ### Installing Packages
@@ -198,6 +214,7 @@ Please report security issues via [GitHub Security Advisories](https://github.co
 
 Packages are defined using `.repo` files. See:
 
+- **[Quick Start Guide](docs/QUICK_START_REPO.md)** - Create your first .repo file in 5 minutes ⚡
 - [Creating .repo Files](docs/CREATING_REPO_FILES.md) - Complete guide with examples
 - [.repo Schema Reference](docs/REPO_SCHEMA.md) - Full schema documentation
 
@@ -210,12 +227,13 @@ Packages are defined using `.repo` files. See:
 - [Security Configuration](docs/SECURITY_CONFIGURATION.md) - Security policies and configuration options
 
 ### For Package Creators
+- **[Quick Start: Create a .repo File](docs/QUICK_START_REPO.md)** - 5-minute practical guide ⚡
 - [Creating .repo Files](docs/CREATING_REPO_FILES.md) - How to package software for Ora
 - [.repo Schema Reference](docs/REPO_SCHEMA.md) - Complete schema documentation
 
 ### For Contributors
 - [Testing Guide](tests/README.md) - Running tests and development
-- [Roadmap](ROADMAP.md) - Planned features and improvements
+- [Roadmap](ROADMAP/README.md) - Planned features and improvements
 
 ---
 

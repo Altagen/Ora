@@ -11,7 +11,9 @@ impl HttpClient {
     pub fn new() -> Result<Self> {
         let client = Client::builder()
             .timeout(Duration::from_secs(300))
-            .user_agent(format!("ora/{}", env!("CARGO_PKG_VERSION")))
+            // Use curl-like user agent for better compatibility with websites
+            // that serve different content based on user agent
+            .user_agent("curl/8.0.0")
             .build()
             .context("Failed to create HTTP client")?;
 

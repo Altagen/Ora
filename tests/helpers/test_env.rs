@@ -31,6 +31,26 @@ impl TestEnvironment {
         std::fs::create_dir_all(&install_dir)?;
         std::fs::create_dir_all(&bin_dir)?;
 
+        // Create a permissive security config for tests
+        let security_config = config_dir.join("security.toml");
+        std::fs::write(
+            &security_config,
+            r#"
+[network.git]
+https_only = false
+allowed_schemes = ["https", "http", "file"]
+
+[network]
+max_download_size = 10737418240  # 10GB for tests
+request_timeout = 300
+max_redirects = 10
+
+[validation]
+max_archive_size = 10737418240  # 10GB
+max_extracted_size = 21474836480  # 20GB
+"#,
+        )?;
+
         Ok(Self {
             _temp_dir: temp_dir,
             config_dir,

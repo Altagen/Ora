@@ -50,6 +50,31 @@ pub async fn execute(args: UninstallArgs) -> Result<()> {
             installed.install_dir
         ))?;
         log::debug!("Removed directory: {}", installed.install_dir);
+
+        // Clean up parent directory if it's empty
+        if let Some(parent_dir) = install_dir.parent() {
+            if parent_dir.exists() {
+                match std::fs::read_dir(parent_dir) {
+                    Ok(mut entries) => {
+                        // Check if directory is empty
+                        if entries.next().is_none() {
+                            if let Err(e) = std::fs::remove_dir(parent_dir) {
+                                log::debug!(
+                                    "Could not remove empty parent directory {:?}: {}",
+                                    parent_dir,
+                                    e
+                                );
+                            } else {
+                                log::debug!("Removed empty parent directory: {:?}", parent_dir);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::debug!("Could not check parent directory {:?}: {}", parent_dir, e);
+                    }
+                }
+            }
+        }
     }
 
     // Remove from database
