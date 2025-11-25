@@ -81,7 +81,13 @@ impl Verifier {
             .context("Failed to download checksum")?;
 
         let expected_hash = if checksum_config.is_single_hash() {
-            checksum_content.trim().to_string()
+            // Extract only the hash part (first whitespace-delimited token)
+            // The file may contain "hash  filename" format
+            checksum_content
+                .split_whitespace()
+                .next()
+                .context("Empty checksum file")?
+                .to_string()
         } else {
             // Parse multi-hash file
             let filename = file_path
