@@ -108,17 +108,19 @@ impl RegistrySync {
                     anyhow::bail!("Registry '{}' not synced", registry_name);
                 }
 
-                // Look for package.repo file in ora-registry/ directory
+                // Look for package.repo file in configured registry directory
+                let registry_dir = registry.get_registry_dir();
                 let repo_file = registry_path
-                    .join("ora-registry")
+                    .join(registry_dir)
                     .join(format!("{}.repo", package_name));
 
                 if !repo_file.exists() {
                     anyhow::bail!(
                         "Package '{}' not found in registry '{}'. \
-                         Registry must contain an 'ora-registry/' directory with .repo files.",
+                         Registry must contain a '{}/' directory with .repo files.",
                         package_name,
-                        registry_name
+                        registry_name,
+                        registry_dir
                     );
                 }
 

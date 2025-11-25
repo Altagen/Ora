@@ -139,6 +139,9 @@ pub enum RegistryCommand {
         /// Git branch to use for this registry (optional, defaults to repository's default branch)
         #[arg(long)]
         branch: Option<String>,
+        /// Registry directory name within the repository (optional, defaults to "ora-registry")
+        #[arg(long)]
+        dir: Option<String>,
     },
     List {
         #[arg(short, long)]

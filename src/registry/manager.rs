@@ -16,6 +16,7 @@ impl RegistryManager {
         ca_cert: Option<String>,
         pin_cert: bool,
         branch: Option<String>,
+        registry_dir: Option<String>,
     ) -> Result<()> {
         let mut config = load_global_config().await?;
 
@@ -49,6 +50,7 @@ impl RegistryManager {
             tls,
             gpg_key: None,
             branch,
+            registry_dir,
         };
 
         config.registries.push(registry);
@@ -368,22 +370,25 @@ impl RegistryManager {
             }
         }
 
-        // 4. Check for ora-registry/ directory
-        let ora_registry_dir = registry_path.join("ora-registry");
+        // 4. Check for registry directory (configurable, defaults to "ora-registry")
+        let registry_dir_name = registry.get_registry_dir();
+        let registry_dir_path = registry_path.join(registry_dir_name);
 
-        if !ora_registry_dir.exists() {
-            println!("❌ Missing 'ora-registry/' directory");
+        if !registry_dir_path.exists() {
+            println!("❌ Missing '{}/' directory", registry_dir_name);
             println!(
-                "  A valid registry must contain an 'ora-registry/' directory with .repo files"
+                "  A valid registry must contain a '{}/' directory with .repo files",
+                registry_dir_name
             );
             anyhow::bail!(
-                "Registry '{}' is missing the required 'ora-registry/' directory",
-                name
+                "Registry '{}' is missing the required '{}/' directory",
+                name,
+                registry_dir_name
             );
         }
 
-        println!("✅ 'ora-registry/' directory exists");
-        let registry_dir = ora_registry_dir;
+        println!("✅ '{}/' directory exists", registry_dir_name);
+        let registry_dir = registry_dir_path;
 
         // 5. Count .repo files
         let mut repo_files = Vec::new();

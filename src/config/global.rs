@@ -29,6 +29,17 @@ pub struct Registry {
     /// Optional Git branch to use for this registry (defaults to repository's default branch)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    /// Optional registry directory name (defaults to "ora-registry")
+    /// This is the directory within the Git repository that contains .repo files
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registry_dir: Option<String>,
+}
+
+impl Registry {
+    /// Get the registry directory name, with fallback to "ora-registry"
+    pub fn get_registry_dir(&self) -> &str {
+        self.registry_dir.as_deref().unwrap_or("ora-registry")
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
