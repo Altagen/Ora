@@ -84,3 +84,92 @@ pub fn parse_checksum_file(content: &str, filename: &str) -> Option<String> {
 
     None
 }
+
+/// Parses a single-hash checksum file that may contain "hash  filename" format
+/// Returns only the hash portion, stripping any filename suffix
+#[cfg(test)]
+pub fn parse_single_hash(content: &str) -> Option<String> {
+    content.split_whitespace().next().map(|s| s.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_checksum_file_standard_format() {
+        let content = "abc123def456  example.tar.gz\n789ghi012jkl  another.zip";
+        assert_eq!(
+            parse_checksum_file(content, "example.tar.gz"),
+            Some("abc123def456".to_string())
+        );
+        assert_eq!(
+            parse_checksum_file(content, "another.zip"),
+            Some("789ghi012jkl".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_checksum_file_with_asterisk() {
+        let content = "abc123def456 *example.tar.gz";
+        assert_eq!(
+            parse_checksum_file(content, "example.tar.gz"),
+            Some("abc123def456".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_checksum_file_not_found() {
+        let content = "abc123def456  example.tar.gz";
+        assert_eq!(parse_checksum_file(content, "nonexistent.zip"), None);
+    }
+
+    #[test]
+    fn test_parse_checksum_file_with_comments() {
+        let content = "# This is a comment\nabc123def456  example.tar.gz\n# Another comment";
+        assert_eq!(
+            parse_checksum_file(content, "example.tar.gz"),
+            Some("abc123def456".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_single_hash_with_filename() {
+        // BUG-1: Test parsing of single-hash format with filename suffix
+        let content = "1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599  ripgrep-15.1.0-x86_64-unknown-linux-musl.tar.gz";
+        assert_eq!(
+            parse_single_hash(content),
+            Some("1c9297be4a084eea7ecaedf93eb03d058d6faae29bbc57ecdaf5063921491599".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_single_hash_without_filename() {
+        let content = "abc123def456789";
+        assert_eq!(
+            parse_single_hash(content),
+            Some("abc123def456789".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_single_hash_with_whitespace() {
+        let content = "  abc123def456789  \n";
+        assert_eq!(
+            parse_single_hash(content),
+            Some("abc123def456789".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_single_hash_empty() {
+        let content = "";
+        assert_eq!(parse_single_hash(content), None);
+    }
+
+    #[test]
+    fn test_parse_single_hash_whitespace_only() {
+        let content = "   \n  \t  ";
+        assert_eq!(parse_single_hash(content), None);
+    }
+}

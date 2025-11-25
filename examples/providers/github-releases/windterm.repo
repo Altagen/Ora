@@ -1,0 +1,30 @@
+name = "windterm"
+description = "A professional SSH/SFTP/Shell/Telnet/Serial terminal"
+homepage = "https://github.com/kingToolbox/WindTerm"
+
+[source]
+type = "github-releases"
+repo = "kingToolbox/WindTerm"
+
+[source.download]
+url = "https://github.com/kingToolbox/WindTerm/releases/download/{version}/WindTerm_{version}_Linux_Portable_{arch}.zip"
+
+[platform]
+[platform.os_map]
+linux = "Linux"
+
+[platform.arch_map]
+x86_64 = "x86_64"
+aarch64 = "arm64"
+
+[install]
+mode = "userland"
+binaries = ["WindTerm_*/WindTerm"]
+
+[security]
+allow_insecure = false
+
+[metadata]
+license = "Apache-2.0"
+authors = ["kingToolbox"]
+tags = ["terminal", "ssh", "sftp"]

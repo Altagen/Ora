@@ -20,6 +20,13 @@ impl Extractor {
     pub fn extract(archive_path: &Path, dest_dir: &Path) -> Result<()> {
         log::info!("Extracting {:?} to {:?}", archive_path, dest_dir);
 
+        // Clean extraction directory if it exists to prevent accumulation of old extracts
+        if dest_dir.exists() {
+            log::debug!("Removing old extraction directory: {:?}", dest_dir);
+            std::fs::remove_dir_all(dest_dir)
+                .context("Failed to remove old extraction directory")?;
+        }
+
         // Ensure destination directory exists
         std::fs::create_dir_all(dest_dir)?;
 
@@ -379,6 +386,7 @@ impl Extractor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn test_path_traversal_detection() {
@@ -400,5 +408,66 @@ mod tests {
 
         // Cleanup
         let _ = std::fs::remove_dir_all(&dest);
+    }
+
+    #[test]
+    fn test_extraction_cache_cleanup() {
+        // BUG-3: Test that old extraction directory is cleaned before extracting
+        use std::io::Write;
+
+        // Create a temporary extraction directory
+        let dest = std::env::temp_dir().join("ora_test_extraction_cleanup");
+
+        // First, create the directory with an old file
+        fs::create_dir_all(&dest).expect("Failed to create test directory");
+        let old_file = dest.join("old_version").join("old_file.txt");
+        fs::create_dir_all(old_file.parent().unwrap()).expect("Failed to create old directory");
+        let mut file = fs::File::create(&old_file).expect("Failed to create old file");
+        file.write_all(b"old content")
+            .expect("Failed to write old file");
+
+        // Verify the old file exists
+        assert!(old_file.exists(), "Old file should exist");
+
+        // Create a simple tar.gz archive with new content
+        let archive_path = std::env::temp_dir().join("test_archive.tar.gz");
+        {
+            use flate2::write::GzEncoder;
+            use flate2::Compression;
+            use tar::Builder;
+
+            let tar_gz = fs::File::create(&archive_path).expect("Failed to create archive file");
+            let encoder = GzEncoder::new(tar_gz, Compression::default());
+            let mut tar = Builder::new(encoder);
+
+            // Add a new file to the archive
+            let new_content = b"new content";
+            let mut header = tar::Header::new_gnu();
+            header.set_size(new_content.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            tar.append_data(&mut header, "new_version/new_file.txt", &new_content[..])
+                .expect("Failed to add file to archive");
+
+            tar.finish().expect("Failed to finish archive");
+        }
+
+        // Extract the new archive - this should clean the old directory first
+        Extractor::extract(&archive_path, &dest).expect("Failed to extract archive");
+
+        // Verify old file no longer exists (directory was cleaned)
+        assert!(!old_file.exists(), "Old file should have been cleaned up");
+
+        // Verify new file exists
+        let new_file = dest.join("new_version").join("new_file.txt");
+        assert!(new_file.exists(), "New file should exist");
+
+        // Read and verify new file content
+        let content = fs::read_to_string(&new_file).expect("Failed to read new file");
+        assert_eq!(content, "new content");
+
+        // Cleanup
+        let _ = fs::remove_file(&archive_path);
+        let _ = fs::remove_dir_all(&dest);
     }
 }

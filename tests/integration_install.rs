@@ -24,7 +24,8 @@ fn test_install_from_repo_file_windman() {
         .arg("install")
         .arg("--repo")
         .arg(repo_file)
-        .arg("--userland");
+        .arg("--userland")
+        .arg("windman");
 
     cmd.assert()
         .success()
@@ -53,13 +54,13 @@ fn test_install_from_registry() {
         .arg(registry.url());
     cmd.assert().success();
 
-    // Update registry
+    // Sync registry
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
     cmd.env("ORA_CONFIG_DIR", env.config_dir())
         .env("ORA_CACHE_DIR", env.cache_dir())
         .env("ORA_DATA_DIR", env.data_dir())
         .arg("registry")
-        .arg("update");
+        .arg("sync");
     cmd.assert().success();
 
     // Install windman (smallest package for testing)

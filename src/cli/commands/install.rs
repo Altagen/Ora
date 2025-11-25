@@ -225,6 +225,7 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
         symlinks: deployment.symlinks,
         registry_source: registry_source.clone(),
         checksums: Default::default(),
+        allow_insecure: args.allow_insecure,
     };
 
     db.packages.insert(package_name.clone(), installed_package);
@@ -326,6 +327,7 @@ async fn execute_local_install(args: InstallArgs) -> Result<()> {
         symlinks: deployment.symlinks,
         registry_source: format!("local:{}", archive_path.display()),
         checksums: Default::default(),
+        allow_insecure: args.allow_insecure,
     };
 
     db.packages.insert(metadata.name.clone(), installed_package);

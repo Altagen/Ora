@@ -6,11 +6,14 @@ use std::process::Command;
 
 #[test]
 fn test_registry_add() {
-    let _env = TestEnvironment::new().unwrap();
+    let env = TestEnvironment::new().unwrap();
     let registry = MockRegistry::new().unwrap();
 
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry")
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
         .arg("add")
         .arg("test-registry")
         .arg(registry.url());
@@ -22,12 +25,15 @@ fn test_registry_add() {
 
 #[test]
 fn test_registry_list() {
-    let _env = TestEnvironment::new().unwrap();
+    let env = TestEnvironment::new().unwrap();
     let registry = MockRegistry::new().unwrap();
 
     // First add a registry
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry")
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
         .arg("add")
         .arg("test-registry")
         .arg(registry.url());
@@ -35,43 +41,30 @@ fn test_registry_list() {
 
     // Then list registries
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry").arg("list");
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
+        .arg("list");
 
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("test-registry"));
 }
 
-#[test]
-fn test_registry_update() {
-    let _env = TestEnvironment::new().unwrap();
-    let registry = MockRegistry::new().unwrap();
-
-    // Add registry
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry")
-        .arg("add")
-        .arg("test-registry")
-        .arg(registry.url());
-    cmd.assert().success();
-
-    // Update registry
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry").arg("update");
-
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("test-registry").or(predicate::str::contains("Updating")));
-}
+// Test removed - 'registry update' command was deprecated in favor of 'registry sync'
 
 #[test]
 fn test_registry_remove() {
-    let _env = TestEnvironment::new().unwrap();
+    let env = TestEnvironment::new().unwrap();
     let registry = MockRegistry::new().unwrap();
 
     // Add registry
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry")
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
         .arg("add")
         .arg("test-registry")
         .arg(registry.url());
@@ -79,7 +72,12 @@ fn test_registry_remove() {
 
     // Remove registry
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
-    cmd.arg("registry").arg("remove").arg("test-registry");
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
+        .arg("remove")
+        .arg("test-registry");
 
     cmd.assert()
         .success()
@@ -235,7 +233,9 @@ fn test_registry_verify_valid() {
         ))
         .stdout(predicate::str::contains("✓ Registry synced locally"))
         .stdout(predicate::str::contains("✓ Valid git repository"))
-        .stdout(predicate::str::contains("✓ 'packages/' directory exists"))
+        .stdout(predicate::str::contains(
+            "✓ 'ora-registry/' directory exists",
+        ))
         .stdout(predicate::str::contains("verification complete"));
 }
 
@@ -320,4 +320,96 @@ fn test_registry_verify_shows_package_count() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Found").and(predicate::str::contains("package")));
+}
+
+#[test]
+fn test_registry_list_with_verbose() {
+    let env = TestEnvironment::new().unwrap();
+    let registry = MockRegistry::new().unwrap();
+
+    // Add a registry
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
+        .arg("add")
+        .arg("test-registry")
+        .arg(registry.url());
+    cmd.assert().success();
+
+    // List registries with --verbose
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("--verbose")
+        .arg("registry")
+        .arg("list");
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("test-registry"));
+}
+
+#[test]
+fn test_registry_list_with_debug() {
+    let env = TestEnvironment::new().unwrap();
+    let registry = MockRegistry::new().unwrap();
+
+    // Add a registry
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
+        .arg("add")
+        .arg("test-registry")
+        .arg(registry.url());
+    cmd.assert().success();
+
+    // List registries with --debug
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("--debug")
+        .arg("registry")
+        .arg("list");
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("test-registry"));
+}
+
+#[test]
+fn test_registry_add_with_branch() {
+    let env = TestEnvironment::new().unwrap();
+    let registry = MockRegistry::new().unwrap();
+
+    // Add a registry with a specific branch
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("ora"));
+    cmd.env("ORA_CONFIG_DIR", env.config_dir())
+        .env("ORA_CACHE_DIR", env.cache_dir())
+        .env("ORA_DATA_DIR", env.data_dir())
+        .arg("registry")
+        .arg("add")
+        .arg("test-registry")
+        .arg(registry.url())
+        .arg("--branch")
+        .arg("master");
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("added successfully"));
+
+    // Verify the branch is saved in config by reading the config file
+    let config_path = env.config_dir().join("config.toml");
+    let config_content = std::fs::read_to_string(config_path).expect("Failed to read config");
+
+    // Check that the branch field is present in the config
+    assert!(
+        config_content.contains("branch = \"master\""),
+        "Config should contain branch = \"master\""
+    );
 }
