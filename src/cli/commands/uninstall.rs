@@ -30,7 +30,7 @@ pub async fn execute(args: UninstallArgs) -> Result<()> {
         }
     }
 
-    log::info!("Removing files...");
+    log::debug!("Removing files...");
 
     // Remove symlinks first
     for symlink in &installed.symlinks {
@@ -87,7 +87,7 @@ pub async fn execute(args: UninstallArgs) -> Result<()> {
         .await?;
 
     println!(
-        "✓ Successfully uninstalled {} {}",
+        "✅ Successfully uninstalled {} {}",
         args.package, installed.version
     );
 

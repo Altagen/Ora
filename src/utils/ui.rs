@@ -4,12 +4,12 @@ use indicatif::{ProgressBar, ProgressStyle};
 // UI helper functions - planned for future CLI improvements
 #[allow(dead_code)]
 pub fn success(msg: &str) {
-    println!("{} {}", style("✓").green().bold(), msg);
+    println!("{} {}", style("✅").green().bold(), msg);
 }
 
 #[allow(dead_code)]
 pub fn error(msg: &str) {
-    eprintln!("{} {}", style("✗").red().bold(), msg);
+    eprintln!("{} {}", style("❌").red().bold(), msg);
 }
 
 #[allow(dead_code)]

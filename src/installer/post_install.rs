@@ -106,7 +106,7 @@ pub async fn run_post_install(
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     if !stdout.is_empty() {
-        log::info!("Post-install stdout:\n{}", stdout);
+        log::debug!("Post-install stdout:\n{}", stdout);
     }
 
     if !stderr.is_empty() {

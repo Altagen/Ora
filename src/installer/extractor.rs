@@ -18,7 +18,7 @@ struct ExtractionStats {
 
 impl Extractor {
     pub fn extract(archive_path: &Path, dest_dir: &Path) -> Result<()> {
-        log::info!("Extracting {:?} to {:?}", archive_path, dest_dir);
+        log::debug!("Extracting {:?} to {:?}", archive_path, dest_dir);
 
         // Clean extraction directory if it exists to prevent accumulation of old extracts
         if dest_dir.exists() {
@@ -45,7 +45,7 @@ impl Extractor {
             anyhow::bail!("Unsupported archive format: {}", path_str);
         }
 
-        log::info!("Extraction completed");
+        log::debug!("Extraction completed");
         Ok(())
     }
 
@@ -282,7 +282,7 @@ impl Extractor {
             }
         }
 
-        log::info!(
+        log::debug!(
             "Extraction complete: {} files, {} bytes",
             stats.files_extracted,
             stats.total_bytes_extracted
@@ -373,7 +373,7 @@ impl Extractor {
             }
         }
 
-        log::info!(
+        log::debug!(
             "Extraction complete: {} files, {} bytes",
             stats.files_extracted,
             stats.total_bytes_extracted

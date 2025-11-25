@@ -107,7 +107,7 @@ impl WebpageScrapingProvider {
         let content = serde_json::to_string_pretty(&cache)?;
         std::fs::write(&cache_path, content)?;
 
-        log::info!("Saved cache to: {:?}", cache_path);
+        log::debug!("Saved cache to: {:?}", cache_path);
         Ok(())
     }
 
@@ -120,7 +120,7 @@ impl WebpageScrapingProvider {
             .as_ref()
             .context("version discovery config required for webpage-scraping")?;
 
-        log::info!("Scraping URLs from: {}", version_config.discovery_url);
+        log::debug!("Scraping URLs from: {}", version_config.discovery_url);
 
         // Fetch HTML content
         let html = self.client.get_text(&version_config.discovery_url).await?;
@@ -197,7 +197,7 @@ impl WebpageScrapingProvider {
             anyhow::bail!("No URLs found matching the patterns");
         }
 
-        log::info!("Scraped {} URLs", cached_urls.len());
+        log::debug!("Scraped {} URLs", cached_urls.len());
 
         // Save to cache
         self.save_cache(cached_urls.clone())?;
@@ -282,7 +282,7 @@ impl VersionProvider for WebpageScrapingProvider {
             result
         });
 
-        log::info!(
+        log::debug!(
             "Sorted versions (first 10): {:?}",
             &versions[..versions.len().min(10)]
         );

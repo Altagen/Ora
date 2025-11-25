@@ -12,7 +12,7 @@ pub async fn verify_checksum(
     expected_hash: &str,
     algorithm: &ChecksumAlgorithm,
 ) -> Result<()> {
-    log::info!("Verifying checksum for {:?}", file_path);
+    log::debug!("Verifying checksum for {:?}", file_path);
 
     let computed_hash = compute_checksum(file_path, algorithm).await?;
     let expected_hash = expected_hash.trim().to_lowercase();
@@ -26,7 +26,7 @@ pub async fn verify_checksum(
         return Err(OraError::ChecksumMismatch.into());
     }
 
-    log::info!("Checksum verified successfully");
+    log::debug!("Checksum verified successfully");
     Ok(())
 }
 

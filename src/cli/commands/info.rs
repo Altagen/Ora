@@ -5,7 +5,7 @@ use crate::registry::RegistryManager;
 use crate::storage::database::load_installed_db;
 
 pub async fn execute(args: InfoArgs) -> Result<()> {
-    log::info!("Getting info for: {}", args.package);
+    log::debug!("Getting info for: {}", args.package);
 
     // Check if installed
     let db = load_installed_db().await?;

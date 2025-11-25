@@ -26,7 +26,7 @@ impl Verifier {
         arch: &str,
         allow_insecure: bool,
     ) -> Result<()> {
-        log::info!("Verifying downloaded file: {:?}", file_path);
+        log::debug!("Verifying downloaded file: {:?}", file_path);
 
         // Check if we should skip verification
         if allow_insecure {
@@ -50,7 +50,7 @@ impl Verifier {
                 .await?;
         }
 
-        log::info!("Verification completed successfully");
+        log::debug!("Verification completed successfully");
         Ok(())
     }
 
@@ -73,7 +73,7 @@ impl Verifier {
         let checksum_url = resolve_template_safe(&checksum_config.url, &vars)
             .context("Failed to resolve checksum URL template")?;
 
-        log::info!("Downloading checksum from: {}", checksum_url);
+        log::debug!("Downloading checksum from: {}", checksum_url);
         let checksum_content = self
             .downloader
             .download_text(&checksum_url)
@@ -124,7 +124,7 @@ impl Verifier {
         let signature_url = resolve_template_safe(&gpg_config.signature_url, &vars)
             .context("Failed to resolve signature URL template")?;
 
-        log::info!("Downloading signature from: {}", signature_url);
+        log::debug!("Downloading signature from: {}", signature_url);
 
         // Download signature file
         let file_name = file_path

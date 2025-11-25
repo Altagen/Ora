@@ -18,7 +18,7 @@ pub async fn load_global_config() -> Result<GlobalConfig> {
             // File exists and was read successfully - parse it
             match toml::from_str::<GlobalConfig>(&content) {
                 Ok(config) => {
-                    log::info!("✓ Loaded global configuration from {}", path.display());
+                    log::info!("✅ Loaded global configuration from {}", path.display());
                     Ok(config)
                 }
                 Err(e) => {
@@ -62,7 +62,7 @@ pub async fn save_global_config(config: &GlobalConfig) -> Result<()> {
     // Write config file with user-friendly errors (handles permission denied, disk full, etc.)
     write_file_user_friendly_async(&path, content.as_bytes()).await?;
 
-    log::info!("✓ Saved global configuration to {}", path.display());
+    log::info!("✅ Saved global configuration to {}", path.display());
     Ok(())
 }
 
@@ -77,7 +77,7 @@ pub async fn load_installed_db() -> Result<InstalledDatabase> {
             match toml::from_str::<InstalledDatabase>(&content) {
                 Ok(db) => {
                     log::debug!(
-                        "✓ Loaded installed packages database from {}",
+                        "✅ Loaded installed packages database from {}",
                         path.display()
                     );
                     Ok(db)
@@ -123,6 +123,6 @@ pub async fn save_installed_db(db: &InstalledDatabase) -> Result<()> {
     // Write database file with user-friendly errors
     write_file_user_friendly_async(&path, content.as_bytes()).await?;
 
-    log::debug!("✓ Saved installed packages database to {}", path.display());
+    log::debug!("✅ Saved installed packages database to {}", path.display());
     Ok(())
 }

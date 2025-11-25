@@ -5,7 +5,7 @@ use crate::registry::RegistryIndex;
 use crate::storage::database::load_global_config;
 
 pub async fn execute(args: SearchArgs) -> Result<()> {
-    log::info!("Searching for: {}", args.query);
+    log::debug!("Searching for: {}", args.query);
 
     let config = load_global_config().await?;
 

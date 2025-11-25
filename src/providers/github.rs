@@ -39,7 +39,7 @@ impl GithubProvider {
 #[async_trait]
 impl VersionProvider for GithubProvider {
     async fn list_versions(&self) -> Result<Vec<Version>> {
-        log::info!("Fetching versions from GitHub: {}", self.repo);
+        log::debug!("Fetching versions from GitHub: {}", self.repo);
 
         let url = self.api_url();
         let releases: Vec<GithubRelease> = self

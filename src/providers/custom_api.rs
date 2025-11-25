@@ -31,7 +31,7 @@ impl VersionProvider for CustomApiProvider {
     async fn list_versions(&self) -> Result<Vec<Version>> {
         // Use version discovery if configured
         if let Some(version_config) = &self.config.source.version {
-            log::info!("Using version discovery for custom API");
+            log::debug!("Using version discovery for custom API");
             let discovery = VersionDiscovery::new(version_config.clone())?;
             let version_strings = discovery.discover_versions().await?;
 

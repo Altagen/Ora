@@ -44,7 +44,7 @@ impl GitlabProvider {
 #[async_trait]
 impl VersionProvider for GitlabProvider {
     async fn list_versions(&self) -> Result<Vec<Version>> {
-        log::info!("Fetching versions from GitLab: {}", self.repo);
+        log::debug!("Fetching versions from GitLab: {}", self.repo);
 
         let url = self.api_url();
         let releases: Vec<GitlabRelease> = self

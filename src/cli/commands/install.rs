@@ -144,14 +144,14 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
         latest.tag.clone()
     };
 
-    log::info!("Installing version: {}", version);
+    log::debug!("Installing version: {}", version);
 
     // Get download URL
     let download_url = provider
         .get_download_url(&version, &mapped_os, &mapped_arch)
         .await?;
 
-    log::info!("Download URL: {}", download_url);
+    log::debug!("Download URL: {}", download_url);
 
     // Download
     // Strip trailing slashes from URL before extracting filename
@@ -236,7 +236,7 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
         .log_install(&package_name, &version, &registry_source, true)
         .await?;
 
-    println!("✓ Successfully installed {} {}", package_name, version);
+    println!("✅ Successfully installed {} {}", package_name, version);
 
     Ok(())
 }
@@ -253,7 +253,7 @@ async fn execute_local_install(args: InstallArgs) -> Result<()> {
         .as_ref()
         .context("--metadata is required for local installations")?;
 
-    log::info!("Installing from local archive: {}", archive_path);
+    log::debug!("Installing from local archive: {}", archive_path);
 
     // Load and validate metadata
     let metadata_content = tokio::fs::read_to_string(metadata_path)
@@ -339,7 +339,7 @@ async fn execute_local_install(args: InstallArgs) -> Result<()> {
         .await?;
 
     println!(
-        "✓ Successfully installed {} {} from local archive",
+        "✅ Successfully installed {} {} from local archive",
         metadata.name, metadata.version
     );
 

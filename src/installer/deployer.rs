@@ -17,7 +17,7 @@ impl Deployer {
         package_name: &str,
         version: &str,
     ) -> Result<DeploymentResult> {
-        log::info!("Deploying package to install directory");
+        log::debug!("Deploying package to install directory");
 
         let install_dir = Paths::packages_dir(mode.clone())?
             .join(package_name)
@@ -281,7 +281,7 @@ impl Deployer {
             ))?;
         }
 
-        log::info!("Created symlink: {:?} -> {:?}", link, src);
+        log::debug!("Created symlink: {:?} -> {:?}", link, src);
         Ok(())
     }
 

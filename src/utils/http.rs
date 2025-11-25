@@ -236,7 +236,7 @@ impl HttpClient {
     }
 
     pub async fn download_file(&self, url: &str, dest: &std::path::Path) -> Result<()> {
-        log::info!("Downloading {} to {:?}", url, dest);
+        log::debug!("Downloading {} to {:?}", url, dest);
 
         // Validate URL before download
         Self::validate_url(url)?;
