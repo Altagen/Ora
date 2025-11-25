@@ -15,6 +15,7 @@ impl RegistryManager {
         trust_level: String,
         ca_cert: Option<String>,
         pin_cert: bool,
+        branch: Option<String>,
     ) -> Result<()> {
         let mut config = load_global_config().await?;
 
@@ -47,12 +48,14 @@ impl RegistryManager {
             enabled: true,
             tls,
             gpg_key: None,
+            branch,
         };
 
         config.registries.push(registry);
         save_global_config(&config).await?;
 
         log::info!("Registry '{}' added successfully", name);
+        println!("✓ Registry '{}' added successfully", name);
 
         // Sync the registry
         RegistrySync::sync_registry(&name, &url).await?;
@@ -96,6 +99,7 @@ impl RegistryManager {
 
         save_global_config(&config).await?;
         log::info!("Registry '{}' removed", name);
+        println!("✓ Registry '{}' removed", name);
 
         Ok(())
     }
@@ -149,29 +153,6 @@ impl RegistryManager {
             }
 
             println!("\nSync complete!");
-        }
-
-        Ok(())
-    }
-
-    pub async fn update_registries(name: Option<String>) -> Result<()> {
-        let config = load_global_config().await?;
-
-        if let Some(name) = name {
-            let registry = config
-                .registries
-                .iter()
-                .find(|r| r.name == name)
-                .context(format!("Registry '{}' not found", name))?;
-
-            RegistrySync::sync_registry(&registry.name, &registry.url).await?;
-        } else {
-            for registry in &config.registries {
-                if registry.enabled {
-                    log::info!("Updating registry: {}", registry.name);
-                    RegistrySync::sync_registry(&registry.name, &registry.url).await?;
-                }
-            }
         }
 
         Ok(())

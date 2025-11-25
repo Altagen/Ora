@@ -19,6 +19,10 @@ impl RegistryType {
         // Examples: https://github.com/user/repo.git or https://gitlab.com/user/repo.git
         if url.contains(".git") {
             RegistryType::Git
+        } else if url.starts_with("file://") {
+            // file:// URLs are treated as Git repositories (typically used in tests)
+            // They point to local Git repositories on the filesystem
+            RegistryType::Git
         } else {
             // Default to Direct URL for HTTP/HTTPS endpoints
             // This allows nginx redirects, clean URLs, and flexible setups
@@ -30,20 +34,40 @@ impl RegistryType {
 
 impl RegistrySync {
     pub async fn sync_registry(name: &str, url: &str) -> Result<()> {
+        // Load config to get the branch if specified
+        let config = crate::storage::database::load_global_config().await?;
+        let branch = config
+            .registries
+            .iter()
+            .find(|r| r.name == name)
+            .and_then(|r| r.branch.clone());
+
+        Self::sync_registry_with_branch(name, url, branch.as_deref()).await
+    }
+
+    async fn sync_registry_with_branch(
+        name: &str,
+        url: &str,
+        branch: Option<&str>,
+    ) -> Result<()> {
         let registry_type = RegistryType::from_url(url);
 
         match registry_type {
             RegistryType::Git => {
-                log::info!("Syncing Git registry '{}' from {}", name, url);
+                if let Some(br) = branch {
+                    log::info!("Syncing Git registry '{}' from {} (branch: {})", name, url, br);
+                } else {
+                    log::info!("Syncing Git registry '{}' from {}", name, url);
+                }
                 let registry_path = Cache::registry_path(name)?;
 
                 // Check if it's a git repository
                 if registry_path.join(".git").exists() {
                     // Pull latest changes
-                    Self::git_pull(&registry_path)?;
+                    Self::git_pull(&registry_path, branch)?;
                 } else {
                     // Clone for the first time
-                    Self::git_clone(url, &registry_path)?;
+                    Self::git_clone(url, &registry_path, branch)?;
                 }
 
                 log::info!("Registry '{}' synced successfully", name);
@@ -139,8 +163,12 @@ impl RegistrySync {
         }
     }
 
-    fn git_clone(url: &str, dest: &PathBuf) -> Result<()> {
-        log::debug!("Cloning {} to {:?}", url, dest);
+    fn git_clone(url: &str, dest: &PathBuf, branch: Option<&str>) -> Result<()> {
+        if let Some(br) = branch {
+            log::debug!("Cloning {} to {:?} (branch: {})", url, dest, br);
+        } else {
+            log::debug!("Cloning {} to {:?}", url, dest);
+        }
 
         // SECURITY: Validate Git URL to prevent command injection
         crate::security::validate_git_url(url).context("Git URL validation failed")?;
@@ -156,6 +184,11 @@ impl RegistrySync {
 
         let mut builder = git2::build::RepoBuilder::new();
         builder.fetch_options(fetch_options);
+
+        // Set branch if specified
+        if let Some(br) = branch {
+            builder.branch(br);
+        }
 
         log::debug!("Using shallow clone (depth=1) for security");
         builder
@@ -228,14 +261,21 @@ impl RegistrySync {
         Ok(total)
     }
 
-    fn git_pull(repo_path: &PathBuf) -> Result<()> {
+    fn git_pull(repo_path: &PathBuf, branch: Option<&str>) -> Result<()> {
         log::debug!("Pulling latest changes in {:?}", repo_path);
 
         let repo = git2::Repository::open(repo_path).context("Failed to open repository")?;
 
+        // Determine which branch to fetch
+        let branches_to_fetch: Vec<&str> = if let Some(br) = branch {
+            vec![br]
+        } else {
+            vec!["main", "master"]
+        };
+
         // Fetch
         let mut remote = repo.find_remote("origin")?;
-        remote.fetch(&["main", "master"], None, None)?;
+        remote.fetch(&branches_to_fetch, None, None)?;
 
         // Get reference to FETCH_HEAD
         let fetch_head = repo.find_reference("FETCH_HEAD")?;
@@ -248,10 +288,21 @@ impl RegistrySync {
             log::debug!("Already up to date");
         } else if analysis.0.is_fast_forward() {
             // Fast-forward merge
-            let refname = "refs/heads/main"; // or master
-            let mut reference = repo.find_reference(refname)?;
+            // Use specified branch or try main/master
+            let branch_name = branch.unwrap_or("main");
+            let refname = format!("refs/heads/{}", branch_name);
+            let mut reference = repo.find_reference(&refname).or_else(|_| {
+                // Fallback to master if main doesn't exist
+                if branch.is_none() {
+                    repo.find_reference("refs/heads/master")
+                } else {
+                    Err(git2::Error::from_str("Branch not found"))
+                }
+            })?;
             reference.set_target(fetch_commit.id(), "Fast-forward")?;
-            repo.set_head(refname)?;
+            repo.set_head(reference.name().ok_or_else(|| {
+                git2::Error::from_str("Invalid reference name")
+            })?)?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
         }
 
