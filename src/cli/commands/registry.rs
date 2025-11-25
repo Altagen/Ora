@@ -11,8 +11,9 @@ pub async fn execute(args: RegistryArgs) -> Result<()> {
             trust_level,
             ca_cert,
             pin_cert,
+            branch,
         } => {
-            RegistryManager::add_registry(name, url, trust_level, ca_cert, pin_cert).await?;
+            RegistryManager::add_registry(name, url, trust_level, ca_cert, pin_cert, branch).await?;
         }
         RegistryCommand::List { verbose } => {
             RegistryManager::list_registries(verbose).await?;
@@ -22,9 +23,6 @@ pub async fn execute(args: RegistryArgs) -> Result<()> {
         }
         RegistryCommand::Sync { name } => {
             RegistryManager::sync_registries(name).await?;
-        }
-        RegistryCommand::Update { name } => {
-            RegistryManager::update_registries(name).await?;
         }
         RegistryCommand::Verify { name } => {
             RegistryManager::verify_registry(name).await?;

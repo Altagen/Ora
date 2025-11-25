@@ -26,6 +26,9 @@ pub struct Registry {
     pub tls: Option<TlsConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub gpg_key: Option<String>,
+    /// Optional Git branch to use for this registry (defaults to repository's default branch)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
