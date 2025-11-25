@@ -13,7 +13,8 @@ pub async fn execute(args: RegistryArgs) -> Result<()> {
             pin_cert,
             branch,
         } => {
-            RegistryManager::add_registry(name, url, trust_level, ca_cert, pin_cert, branch).await?;
+            RegistryManager::add_registry(name, url, trust_level, ca_cert, pin_cert, branch)
+                .await?;
         }
         RegistryCommand::List { verbose } => {
             RegistryManager::list_registries(verbose).await?;

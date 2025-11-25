@@ -45,17 +45,18 @@ impl RegistrySync {
         Self::sync_registry_with_branch(name, url, branch.as_deref()).await
     }
 
-    async fn sync_registry_with_branch(
-        name: &str,
-        url: &str,
-        branch: Option<&str>,
-    ) -> Result<()> {
+    async fn sync_registry_with_branch(name: &str, url: &str, branch: Option<&str>) -> Result<()> {
         let registry_type = RegistryType::from_url(url);
 
         match registry_type {
             RegistryType::Git => {
                 if let Some(br) = branch {
-                    log::info!("Syncing Git registry '{}' from {} (branch: {})", name, url, br);
+                    log::info!(
+                        "Syncing Git registry '{}' from {} (branch: {})",
+                        name,
+                        url,
+                        br
+                    );
                 } else {
                     log::info!("Syncing Git registry '{}' from {}", name, url);
                 }
@@ -300,9 +301,11 @@ impl RegistrySync {
                 }
             })?;
             reference.set_target(fetch_commit.id(), "Fast-forward")?;
-            repo.set_head(reference.name().ok_or_else(|| {
-                git2::Error::from_str("Invalid reference name")
-            })?)?;
+            repo.set_head(
+                reference
+                    .name()
+                    .ok_or_else(|| git2::Error::from_str("Invalid reference name"))?,
+            )?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
         }
 

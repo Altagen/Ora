@@ -423,7 +423,8 @@ mod tests {
         let old_file = dest.join("old_version").join("old_file.txt");
         fs::create_dir_all(old_file.parent().unwrap()).expect("Failed to create old directory");
         let mut file = fs::File::create(&old_file).expect("Failed to create old file");
-        file.write_all(b"old content").expect("Failed to write old file");
+        file.write_all(b"old content")
+            .expect("Failed to write old file");
 
         // Verify the old file exists
         assert!(old_file.exists(), "Old file should exist");

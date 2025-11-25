@@ -146,13 +146,19 @@ mod tests {
     #[test]
     fn test_parse_single_hash_without_filename() {
         let content = "abc123def456789";
-        assert_eq!(parse_single_hash(content), Some("abc123def456789".to_string()));
+        assert_eq!(
+            parse_single_hash(content),
+            Some("abc123def456789".to_string())
+        );
     }
 
     #[test]
     fn test_parse_single_hash_with_whitespace() {
         let content = "  abc123def456789  \n";
-        assert_eq!(parse_single_hash(content), Some("abc123def456789".to_string()));
+        assert_eq!(
+            parse_single_hash(content),
+            Some("abc123def456789".to_string())
+        );
     }
 
     #[test]
