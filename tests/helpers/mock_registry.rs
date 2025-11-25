@@ -17,8 +17,8 @@ impl MockRegistry {
         // Initialize git repository
         let repo = git2::Repository::init(&repo_path)?;
 
-        // Create packages directory
-        let packages_dir = repo_path.join("packages");
+        // Create ora-registry directory (expected structure for registries)
+        let packages_dir = repo_path.join("ora-registry");
         std::fs::create_dir_all(&packages_dir)?;
 
         // Copy .repo files from fixtures
@@ -41,7 +41,7 @@ impl MockRegistry {
         // Create initial commit
         let mut index = repo.index()?;
         index.add_all(
-            ["packages/*.repo"].iter(),
+            ["ora-registry/*.repo"].iter(),
             git2::IndexAddOption::DEFAULT,
             None,
         )?;
@@ -79,7 +79,7 @@ impl MockRegistry {
     /// Add a new .repo file to the registry
     #[allow(dead_code)]
     pub fn add_repo_file(&self, name: &str, content: &str) -> Result<()> {
-        let packages_dir = self.repo_path.join("packages");
+        let packages_dir = self.repo_path.join("ora-registry");
         let file_path = packages_dir.join(format!("{}.repo", name));
 
         std::fs::write(&file_path, content)?;
@@ -87,7 +87,7 @@ impl MockRegistry {
         // Commit the change
         let repo = git2::Repository::open(&self.repo_path)?;
         let mut index = repo.index()?;
-        index.add_path(Path::new(&format!("packages/{}.repo", name)))?;
+        index.add_path(Path::new(&format!("ora-registry/{}.repo", name)))?;
         index.write()?;
 
         let tree_id = index.write_tree()?;
@@ -109,7 +109,7 @@ impl MockRegistry {
 
     /// List all packages in the registry
     pub fn list_packages(&self) -> Result<Vec<String>> {
-        let packages_dir = self.repo_path.join("packages");
+        let packages_dir = self.repo_path.join("ora-registry");
         let mut packages = Vec::new();
 
         if packages_dir.exists() {
@@ -143,7 +143,7 @@ mod tests {
     fn test_mock_registry_creation() {
         let registry = MockRegistry::new().unwrap();
         assert!(registry.path().exists());
-        assert!(registry.path().join("packages").exists());
+        assert!(registry.path().join("ora-registry").exists());
     }
 
     #[test]
