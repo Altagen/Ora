@@ -258,8 +258,6 @@ jobs:
           ## Documentation
 
           - [README](https://github.com/${{ github.repository }}/blob/$VERSION/README.md)
-          - [Contributing Guide](https://github.com/${{ github.repository }}/blob/$VERSION/CONTRIBUTING.md)
-          - [Security Configuration](https://github.com/${{ github.repository }}/blob/$VERSION/SECURITY_CONFIGURATION.md)
           TEMPLATE
 
           # Replace variables
