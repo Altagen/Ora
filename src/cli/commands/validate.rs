@@ -32,14 +32,14 @@ pub async fn execute(args: ValidateArgs) -> Result<()> {
 
     // Check binaries
     if repo_config.install.binaries.is_empty() {
-        println!("⚠  Warning: No binaries specified");
+        println!("⚠️   Warning: No binaries specified");
     } else {
         println!("✅ Binaries: {:?}", repo_config.install.binaries);
     }
 
     // Check security
     if repo_config.security.allow_insecure {
-        println!("⚠  Warning: Package allows insecure installation");
+        println!("⚠️   Warning: Package allows insecure installation");
     }
 
     if let Some(checksum) = &repo_config.security.checksum {

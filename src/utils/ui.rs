@@ -14,7 +14,7 @@ pub fn error(msg: &str) {
 
 #[allow(dead_code)]
 pub fn warning(msg: &str) {
-    println!("{} {}", style("⚠").yellow().bold(), msg);
+    println!("{} {}", style("⚠️").yellow().bold(), msg);
 }
 
 #[allow(dead_code)]
