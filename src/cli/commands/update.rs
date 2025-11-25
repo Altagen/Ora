@@ -22,6 +22,11 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
         let installed = match db.packages.get(&package_name) {
             Some(pkg) => pkg,
             None => {
+                // If updating a specific package (not --all), fail
+                if !args.all {
+                    anyhow::bail!("Package '{}' not installed", package_name);
+                }
+                // For --all, just skip packages that aren't installed
                 log::warn!("Package '{}' not installed, skipping", package_name);
                 continue;
             }
@@ -106,8 +111,10 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
             }
         };
 
-        // Determine if we should use allow_insecure based on the repo config
-        let allow_insecure = repo_config.security.allow_insecure;
+        // Determine if we should use allow_insecure
+        // Use the flag from the installed package if it was set during installation
+        // Otherwise, fall back to the repo config
+        let allow_insecure = installed.allow_insecure || repo_config.security.allow_insecure;
 
         // Get latest version (simplified - would need provider logic)
         println!("Updating {} (current: {})", package_name, installed.version);

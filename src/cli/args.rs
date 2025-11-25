@@ -8,8 +8,13 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
 
+    /// Enable verbose output (INFO level logs)
     #[arg(long, global = true)]
     pub verbose: bool,
+
+    /// Enable debug output (DEBUG level logs, implies --verbose)
+    #[arg(long, global = true)]
+    pub debug: bool,
 }
 
 #[derive(Subcommand)]
@@ -131,6 +136,9 @@ pub enum RegistryCommand {
         ca_cert: Option<String>,
         #[arg(long)]
         pin_cert: bool,
+        /// Git branch to use for this registry (optional, defaults to repository's default branch)
+        #[arg(long)]
+        branch: Option<String>,
     },
     List {
         #[arg(short, long)]
@@ -142,9 +150,6 @@ pub enum RegistryCommand {
     /// Sync registries (download/update package definitions)
     Sync {
         /// Optional registry name to sync (syncs all if not specified)
-        name: Option<String>,
-    },
-    Update {
         name: Option<String>,
     },
     Verify {

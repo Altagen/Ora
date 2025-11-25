@@ -26,8 +26,30 @@ pub fn is_shutdown_requested() -> bool {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize logger
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    // Parse CLI arguments early to get verbosity flags
+    let cli = Cli::parse();
+
+    // Initialize logger based on verbosity flags
+    // Default: WARN (only show warnings and errors, no timestamps)
+    // --verbose: INFO (show info messages with timestamps)
+    // --debug: DEBUG (show debug messages with timestamps)
+    let log_level = if cli.debug {
+        "debug"
+    } else if cli.verbose {
+        "info"
+    } else {
+        "warn"
+    };
+
+    let mut builder = env_logger::Builder::from_env(Env::default().default_filter_or(log_level));
+
+    // Configure timestamp based on verbosity
+    if !cli.debug && !cli.verbose {
+        // Default mode: no timestamps for cleaner user-facing output
+        builder.format_timestamp(None);
+    }
+
+    builder.init();
 
     // Set up graceful shutdown handler for SIGINT (Ctrl+C) and SIGTERM
     tokio::spawn(async {
@@ -64,9 +86,6 @@ async fn main() -> Result<()> {
         log::info!("✓ Graceful shutdown complete");
         std::process::exit(130); // Exit code 130 = terminated by Ctrl+C
     });
-
-    // Parse CLI arguments
-    let cli = Cli::parse();
 
     // Execute command
     let result = match cli.command {
