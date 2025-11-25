@@ -87,7 +87,7 @@ pub async fn execute(args: UninstallArgs) -> Result<()> {
         .await?;
 
     println!(
-        "✓ Successfully uninstalled {} v{}",
+        "✓ Successfully uninstalled {} {}",
         args.package, installed.version
     );
 

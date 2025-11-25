@@ -236,7 +236,7 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
         .log_install(&package_name, &version, &registry_source, true)
         .await?;
 
-    println!("✓ Successfully installed {} v{}", package_name, version);
+    println!("✓ Successfully installed {} {}", package_name, version);
 
     Ok(())
 }
@@ -339,7 +339,7 @@ async fn execute_local_install(args: InstallArgs) -> Result<()> {
         .await?;
 
     println!(
-        "✓ Successfully installed {} v{} from local archive",
+        "✓ Successfully installed {} {} from local archive",
         metadata.name, metadata.version
     );
 
