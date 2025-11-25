@@ -233,7 +233,9 @@ fn test_registry_verify_valid() {
         ))
         .stdout(predicate::str::contains("✓ Registry synced locally"))
         .stdout(predicate::str::contains("✓ Valid git repository"))
-        .stdout(predicate::str::contains("✓ 'ora-registry/' directory exists"))
+        .stdout(predicate::str::contains(
+            "✓ 'ora-registry/' directory exists",
+        ))
         .stdout(predicate::str::contains("verification complete"));
 }
 
