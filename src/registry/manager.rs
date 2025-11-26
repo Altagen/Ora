@@ -51,6 +51,7 @@ impl RegistryManager {
             gpg_key: None,
             branch,
             registry_dir,
+            priority: None,
         };
 
         config.registries.push(registry);

@@ -216,6 +216,7 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
 
     // Update installed database
     let installed_package = InstalledPackage {
+        schema_version: crate::config::migrations::CURRENT_SCHEMA_VERSION.to_string(),
         name: package_name.clone(),
         version: version.clone(),
         installed_at: Utc::now(),
@@ -226,6 +227,7 @@ pub async fn execute(args: InstallArgs) -> Result<()> {
         registry_source: registry_source.clone(),
         checksums: Default::default(),
         allow_insecure: args.allow_insecure,
+        metadata: Default::default(),
     };
 
     db.packages.insert(package_name.clone(), installed_package);
@@ -318,6 +320,7 @@ async fn execute_local_install(args: InstallArgs) -> Result<()> {
 
     // Update installed database
     let installed_package = InstalledPackage {
+        schema_version: crate::config::migrations::CURRENT_SCHEMA_VERSION.to_string(),
         name: metadata.name.clone(),
         version: metadata.version.clone(),
         installed_at: Utc::now(),
@@ -328,6 +331,7 @@ async fn execute_local_install(args: InstallArgs) -> Result<()> {
         registry_source: format!("local:{}", archive_path.display()),
         checksums: Default::default(),
         allow_insecure: args.allow_insecure,
+        metadata: Default::default(),
     };
 
     db.packages.insert(metadata.name.clone(), installed_package);

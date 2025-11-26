@@ -10,6 +10,11 @@ pub struct InstalledDatabase {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstalledPackage {
+    /// Schema version for this installed package entry
+    /// Format: "x.y" where x = Ora major, y = schema changes
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
+
     pub name: String,
     pub version: String,
     pub installed_at: DateTime<Utc>,
@@ -23,6 +28,14 @@ pub struct InstalledPackage {
     /// Whether the package was installed with --allow-insecure flag
     #[serde(default)]
     pub allow_insecure: bool,
+
+    /// Additional metadata (extensible for future features)
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub metadata: HashMap<String, String>,
+}
+
+fn default_schema_version() -> String {
+    "0.1".to_string()
 }
 
 #[cfg(test)]
@@ -33,6 +46,7 @@ mod tests {
     #[test]
     fn test_installed_package_serialization_with_allow_insecure() {
         let package = InstalledPackage {
+            schema_version: "0.1".to_string(),
             name: "test-package".to_string(),
             version: "1.0.0".to_string(),
             installed_at: Utc::now(),
@@ -43,6 +57,7 @@ mod tests {
             registry_source: "test-registry".to_string(),
             checksums: HashMap::new(),
             allow_insecure: true,
+            metadata: HashMap::new(),
         };
 
         let serialized = toml::to_string(&package).unwrap();
