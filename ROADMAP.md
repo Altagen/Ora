@@ -9,6 +9,7 @@ This document provides an overview of Ora's development roadmap. For detailed in
 - **[Recently Completed](ROADMAP/COMPLETED.md)** - Features and improvements completed recently
 - **[Security](ROADMAP/SECURITY.md)** - Security improvements and hardening (Critical Priority)
 - **[Features](ROADMAP/FEATURES.md)** - New features and enhancements
+- **[Testing](ROADMAP/TESTING.md)** - Test coverage improvements and missing tests
 - **[Offline Mode](ROADMAP/OFFLINE.md)** - Support for air-gapped and offline environments
 - **[Architecture](ROADMAP/ARCHITECTURE.md)** - Architectural improvements and refactoring
 - **[Documentation](ROADMAP/DOCUMENTATION.md)** - Documentation improvements
@@ -118,6 +119,7 @@ ROADMAP/
 ├── COMPLETED.md        # Recently completed work
 ├── SECURITY.md         # Security improvements (Critical/High/Medium/Low)
 ├── FEATURES.md         # New features and enhancements
+├── TESTING.md          # Test coverage improvements and missing tests
 ├── OFFLINE.md          # Offline mode architecture and design
 ├── ARCHITECTURE.md     # Architectural improvements
 ├── DOCUMENTATION.md    # Documentation improvements
