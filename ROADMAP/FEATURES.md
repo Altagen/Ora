@@ -214,6 +214,71 @@ Suggestions:
 
 ---
 
+### Repository Validation (ora lint)
+
+**Status**: Planned
+**Priority**: Medium
+
+Validate .repo files before publishing to registries.
+
+**Features**:
+- Validate TOML syntax
+- Check required vs optional fields
+- Verify URL templates and variables
+- Detect common mistakes (binary vs binaries, type typos)
+- Security configuration validation
+- Platform mapping verification
+
+**Commands**:
+```bash
+# Validate a single .repo file
+ora lint package.repo
+
+# Validate all .repo files in a directory
+ora lint packages/*.repo
+
+# Show verbose validation output
+ora lint package.repo --verbose
+
+# Output as JSON for CI/CD
+ora lint package.repo --format json
+```
+
+**Example Output**:
+```
+✅ Checking windman.repo...
+
+✅ Required fields:
+  ✓ name: "windman"
+  ✓ [source.type]: "github-releases"
+  ✓ [source.download.url]: valid template
+
+⚠️  Optional fields missing:
+  - description (recommended)
+  - [security.checksum] (highly recommended for security)
+
+❌ Errors:
+  × [install.binaries]: Field is required but missing
+  × [source.download.url]: Invalid template variable {versoin}
+    Did you mean: {version}?
+
+💡 Suggestions:
+  - Add SHA256 checksums for better security
+  - Consider adding GPG signature verification
+```
+
+**Use Cases**:
+- Registry maintainers validating packages before merging
+- CI/CD pipelines ensuring .repo quality
+- Package authors debugging parsing errors
+- Reducing trial-and-error when creating .repo files
+
+**Related Documentation**:
+- See `docs/REPO_SCHEMA.md` for required/optional fields reference
+- See "Common Parsing Errors" section for error explanations
+
+---
+
 ### Progress Indicators
 
 **Status**: Planned
