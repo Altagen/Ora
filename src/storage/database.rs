@@ -17,8 +17,26 @@ pub async fn load_global_config() -> Result<GlobalConfig> {
         Some(content) => {
             // File exists and was read successfully - parse it
             match toml::from_str::<GlobalConfig>(&content) {
-                Ok(config) => {
-                    log::info!("✓ Loaded global configuration from {}", path.display());
+                Ok(mut config) => {
+                    log::info!("✅ Loaded global configuration from {}", path.display());
+
+                    // Auto-migrate config if needed
+                    let old_version = config.config_version.clone();
+                    if let Err(e) = crate::config::migrations::migrate_global_config(&mut config) {
+                        log::warn!("Failed to migrate config: {}", e);
+                        return Err(e);
+                    }
+
+                    // Save migrated config back to disk
+                    if config.config_version != old_version {
+                        log::info!(
+                            "Config migrated from {} to {}",
+                            old_version,
+                            config.config_version
+                        );
+                        save_global_config(&config).await?;
+                    }
+
                     Ok(config)
                 }
                 Err(e) => {
@@ -62,7 +80,7 @@ pub async fn save_global_config(config: &GlobalConfig) -> Result<()> {
     // Write config file with user-friendly errors (handles permission denied, disk full, etc.)
     write_file_user_friendly_async(&path, content.as_bytes()).await?;
 
-    log::info!("✓ Saved global configuration to {}", path.display());
+    log::info!("✅ Saved global configuration to {}", path.display());
     Ok(())
 }
 
@@ -75,11 +93,29 @@ pub async fn load_installed_db() -> Result<InstalledDatabase> {
         Some(content) => {
             // File exists and was read successfully - parse it
             match toml::from_str::<InstalledDatabase>(&content) {
-                Ok(db) => {
+                Ok(mut db) => {
                     log::debug!(
-                        "✓ Loaded installed packages database from {}",
+                        "✅ Loaded installed packages database from {}",
                         path.display()
                     );
+
+                    // Auto-migrate installed packages if needed
+                    let needs_save = db
+                        .packages
+                        .values()
+                        .any(|p| p.schema_version.is_empty() || p.schema_version == "0.0");
+
+                    if let Err(e) = crate::config::migrations::migrate_installed_database(&mut db) {
+                        log::warn!("Failed to migrate installed database: {}", e);
+                        return Err(e);
+                    }
+
+                    // Save migrated database back to disk if any package was migrated
+                    if needs_save {
+                        log::info!("Migrated installed packages database");
+                        save_installed_db(&db).await?;
+                    }
+
                     Ok(db)
                 }
                 Err(e) => {
@@ -123,6 +159,6 @@ pub async fn save_installed_db(db: &InstalledDatabase) -> Result<()> {
     // Write database file with user-friendly errors
     write_file_user_friendly_async(&path, content.as_bytes()).await?;
 
-    log::debug!("✓ Saved installed packages database to {}", path.display());
+    log::debug!("✅ Saved installed packages database to {}", path.display());
     Ok(())
 }

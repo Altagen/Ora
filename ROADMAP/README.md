@@ -7,6 +7,7 @@ This directory contains the roadmap for Ora, organized by theme and feature area
 - **[COMPLETED.md](COMPLETED.md)** - Recently completed features and improvements
 - **[SECURITY.md](SECURITY.md)** - Security improvements and hardening
 - **[FEATURES.md](FEATURES.md)** - New features and enhancements
+- **[TESTING.md](TESTING.md)** - Test coverage improvements and missing tests
 - **[OFFLINE.md](OFFLINE.md)** - Offline mode support for air-gapped environments
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Architectural improvements
 - **[DOCUMENTATION.md](DOCUMENTATION.md)** - Documentation improvements

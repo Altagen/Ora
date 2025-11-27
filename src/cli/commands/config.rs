@@ -75,13 +75,13 @@ async fn show_config() -> Result<()> {
     // Global config
     match load_global_config().await {
         Ok(config) => {
-            println!("   ✓ Global Config: Loaded successfully");
+            println!("   ✅ Global Config: Loaded successfully");
             println!("     ├─ Registries: {}", config.registries.len());
             let enabled_count = config.registries.iter().filter(|r| r.enabled).count();
             println!("     └─ Enabled: {}", enabled_count);
         }
         Err(e) => {
-            println!("   ✗ Global Config: Failed to load");
+            println!("   ❌ Global Config: Failed to load");
             println!("     └─ Error: {}", e);
         }
     }
@@ -89,10 +89,10 @@ async fn show_config() -> Result<()> {
     // Security config
     match SecurityConfig::load() {
         Ok(_config) => {
-            println!("   ✓ Security Config: Loaded successfully");
+            println!("   ✅ Security Config: Loaded successfully");
         }
         Err(e) => {
-            println!("   ✗ Security Config: Failed to load");
+            println!("   ❌ Security Config: Failed to load");
             println!("     └─ Error: {}", e);
         }
     }
@@ -100,10 +100,10 @@ async fn show_config() -> Result<()> {
     // Installed database
     match load_installed_db().await {
         Ok(db) => {
-            println!("   ✓ Installed Packages: {} package(s)", db.packages.len());
+            println!("   ✅ Installed Packages: {} package(s)", db.packages.len());
         }
         Err(e) => {
-            println!("   ✗ Installed Packages: Failed to load");
+            println!("   ❌ Installed Packages: Failed to load");
             println!("     └─ Error: {}", e);
         }
     }
@@ -134,14 +134,14 @@ async fn verify_config() -> Result<()> {
             errors.push(format!("ORA_CONFIG_DIR is not a directory: {}", config_dir));
         }
     }
-    println!("   ✓ Environment variables checked\n");
+    println!("   ✅ Environment variables checked\n");
 
     // Verify global config
     println!("Verifying global configuration...");
     let global_config_path = Paths::config_file()?;
     match load_global_config().await {
         Ok(config) => {
-            println!("   ✓ Global config is valid");
+            println!("   ✅ Global config is valid");
 
             // Check for empty registries
             if config.registries.is_empty() {
@@ -173,7 +173,7 @@ async fn verify_config() -> Result<()> {
         let security_config_path = config_dir.join("security.toml");
         match SecurityConfig::load() {
             Ok(_) => {
-                println!("   ✓ Security config is valid");
+                println!("   ✅ Security config is valid");
             }
             Err(e) => {
                 if security_config_path.exists() {
@@ -194,7 +194,7 @@ async fn verify_config() -> Result<()> {
     let installed_db_path = Paths::installed_db_file()?;
     match load_installed_db().await {
         Ok(_) => {
-            println!("   ✓ Installed packages database is valid");
+            println!("   ✅ Installed packages database is valid");
         }
         Err(e) => {
             if installed_db_path.exists() {
@@ -217,7 +217,7 @@ async fn verify_config() -> Result<()> {
     if let Ok(cache_dir) = Paths::cache_dir() {
         check_directory_writable(&cache_dir, "Cache directory", &mut errors);
     }
-    println!("   ✓ Directory permissions checked\n");
+    println!("   ✅ Directory permissions checked\n");
 
     // Print summary
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -259,7 +259,7 @@ async fn init_config() -> Result<()> {
     // Ensure directories exist
     println!("Creating directories...");
     Paths::ensure_directories()?;
-    println!("   ✓ Directories created\n");
+    println!("   ✅ Directories created\n");
 
     // Initialize global config
     println!("Initializing global configuration...");
@@ -273,7 +273,7 @@ async fn init_config() -> Result<()> {
     } else {
         let default_config = GlobalConfig::default();
         crate::storage::database::save_global_config(&default_config).await?;
-        println!("   ✓ Created: {}", global_config_path.display());
+        println!("   ✅ Created: {}", global_config_path.display());
     }
     println!();
 
@@ -291,7 +291,7 @@ async fn init_config() -> Result<()> {
         } else {
             let default_config = SecurityConfig::default();
             default_config.save()?;
-            println!("   ✓ Created: {}", security_config_path.display());
+            println!("   ✅ Created: {}", security_config_path.display());
         }
     }
     println!();
@@ -322,9 +322,9 @@ fn print_file_status(label: &str, path: &PathBuf) {
             let size = metadata
                 .map(|m| format_size(m.len()))
                 .unwrap_or_else(|| "?".to_string());
-            format!("✓ exists ({})", size)
+            format!("✅ exists ({})", size)
         } else {
-            "✗ exists but not a file".to_string()
+            "❌ exists but not a file".to_string()
         }
     } else {
         "ℹ not created yet (will use defaults)".to_string()
@@ -337,9 +337,9 @@ fn print_file_status(label: &str, path: &PathBuf) {
 fn print_dir_status(label: &str, path: &Path) {
     let status = if path.exists() {
         if path.is_dir() {
-            "✓ exists".to_string()
+            "✅ exists".to_string()
         } else {
-            "✗ exists but not a directory".to_string()
+            "❌ exists but not a directory".to_string()
         }
     } else {
         "ℹ not created yet".to_string()

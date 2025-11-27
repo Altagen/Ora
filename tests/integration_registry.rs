@@ -229,12 +229,12 @@ fn test_registry_verify_valid() {
             "Verifying registry: test-registry",
         ))
         .stdout(predicate::str::contains(
-            "✓ Registry found in configuration",
+            "✅ Registry found in configuration",
         ))
-        .stdout(predicate::str::contains("✓ Registry synced locally"))
-        .stdout(predicate::str::contains("✓ Valid git repository"))
+        .stdout(predicate::str::contains("✅ Registry synced locally"))
+        .stdout(predicate::str::contains("✅ Valid git repository"))
         .stdout(predicate::str::contains(
-            "✓ 'ora-registry/' directory exists",
+            "✅ 'ora-registry/' directory exists",
         ))
         .stdout(predicate::str::contains("verification complete"));
 }
@@ -288,7 +288,7 @@ fn test_registry_verify_not_synced() {
 
     cmd.assert()
         .failure()
-        .stdout(predicate::str::contains("✗ Registry not synced locally"))
+        .stdout(predicate::str::contains("❌ Registry not synced locally"))
         .stdout(predicate::str::contains("ora registry sync test-registry"));
 }
 

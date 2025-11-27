@@ -403,7 +403,7 @@ impl SecurityConfig {
             Ok(path) => path,
             Err(e) => {
                 log::warn!("Could not determine config directory: {}", e);
-                log::info!("Using default security configuration");
+                log::debug!("Using default security configuration");
                 return Ok(Self::default());
             }
         };
@@ -417,7 +417,7 @@ impl SecurityConfig {
                 match toml::from_str::<SecurityConfig>(&content) {
                     Ok(config) => {
                         log::info!(
-                            "✓ Loaded security configuration from {}",
+                            "✅ Loaded security configuration from {}",
                             security_config_path.display()
                         );
                         Ok(config)
@@ -446,8 +446,8 @@ impl SecurityConfig {
                     "No security configuration found at {}",
                     security_config_path.display()
                 );
-                log::info!("Using default security configuration (production-ready defaults)");
-                log::info!("To customize, run: ora security init");
+                log::debug!("Using default security configuration (production-ready defaults)");
+                log::debug!("To customize, run: ora security init");
                 Ok(Self::default())
             }
         }
@@ -471,7 +471,7 @@ impl SecurityConfig {
         write_file_user_friendly(&security_config_path, &content)?;
 
         log::info!(
-            "✓ Saved security configuration to {}",
+            "✅ Saved security configuration to {}",
             security_config_path.display()
         );
         Ok(())

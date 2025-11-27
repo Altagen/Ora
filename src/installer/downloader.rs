@@ -15,7 +15,7 @@ impl Downloader {
     }
 
     pub async fn download(&self, url: &str, dest: &Path) -> Result<()> {
-        log::info!("Downloading from {} to {:?}", url, dest);
+        log::debug!("Downloading from {} to {:?}", url, dest);
 
         // Ensure parent directory exists
         if let Some(parent) = dest.parent() {
@@ -24,7 +24,7 @@ impl Downloader {
 
         self.client.download_file(url, dest).await?;
 
-        log::info!("Download completed");
+        log::debug!("Download completed");
         Ok(())
     }
 

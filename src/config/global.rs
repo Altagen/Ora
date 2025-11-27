@@ -2,6 +2,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct GlobalConfig {
+    /// Config schema version (follows Ora major version)
+    /// Format: "x.y" where x = Ora major, y = config changes
+    #[serde(default = "default_config_version")]
+    pub config_version: String,
+
     #[serde(default)]
     pub registries: Vec<Registry>,
     #[serde(default)]
@@ -12,6 +17,14 @@ pub struct GlobalConfig {
     pub suppress_insecure_warnings: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scraper: Option<ScraperSettings>,
+
+    /// Package aliases (e.g., "k" -> "kubectl")
+    #[serde(default, skip_serializing_if = "std::collections::HashMap::is_empty")]
+    pub aliases: std::collections::HashMap<String, String>,
+}
+
+fn default_config_version() -> String {
+    "0.1".to_string()
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -29,6 +42,22 @@ pub struct Registry {
     /// Optional Git branch to use for this registry (defaults to repository's default branch)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    /// Optional registry directory name (defaults to "ora-registry")
+    /// This is the directory within the Git repository that contains .repo files
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registry_dir: Option<String>,
+
+    /// Registry priority for conflict resolution (lower = higher priority)
+    /// Planned for v0.2.3
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<u8>,
+}
+
+impl Registry {
+    /// Get the registry directory name, with fallback to "ora-registry"
+    pub fn get_registry_dir(&self) -> &str {
+        self.registry_dir.as_deref().unwrap_or("ora-registry")
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

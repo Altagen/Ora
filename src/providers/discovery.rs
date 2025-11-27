@@ -19,7 +19,7 @@ impl VersionDiscovery {
 
     /// Discover available versions from the configured source
     pub async fn discover_versions(&self) -> Result<Vec<String>> {
-        log::info!("Discovering versions from: {}", self.config.discovery_url);
+        log::debug!("Discovering versions from: {}", self.config.discovery_url);
 
         match &self.config.discovery_type {
             DiscoveryType::GithubApi => self.discover_github_api().await,

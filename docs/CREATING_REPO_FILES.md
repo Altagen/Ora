@@ -970,9 +970,9 @@ direct_binary = true
 rename = { "jq-*" = "jq" }
 ```
 
-### Example: fd (With Deb/RPM Packages)
+### Example: fd (Multi-Architecture Tar.gz)
 
-For projects that provide `.deb` or `.rpm` packages, extract binaries:
+For projects with architecture-specific tar.gz archives:
 
 ```toml
 name = "fd"

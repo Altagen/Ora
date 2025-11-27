@@ -16,6 +16,7 @@ impl RegistryManager {
         ca_cert: Option<String>,
         pin_cert: bool,
         branch: Option<String>,
+        registry_dir: Option<String>,
     ) -> Result<()> {
         let mut config = load_global_config().await?;
 
@@ -49,13 +50,15 @@ impl RegistryManager {
             tls,
             gpg_key: None,
             branch,
+            registry_dir,
+            priority: None,
         };
 
         config.registries.push(registry);
         save_global_config(&config).await?;
 
         log::info!("Registry '{}' added successfully", name);
-        println!("✓ Registry '{}' added successfully", name);
+        println!("✅ Registry '{}' added successfully", name);
 
         // Sync the registry
         RegistrySync::sync_registry(&name, &url).await?;
@@ -79,7 +82,7 @@ impl RegistryManager {
                 println!("  Enabled: {}", registry.enabled);
                 println!();
             } else {
-                let enabled_mark = if registry.enabled { "✓" } else { "✗" };
+                let enabled_mark = if registry.enabled { "✅" } else { "❌" };
                 println!("{} {} - {}", enabled_mark, registry.name, registry.url);
             }
         }
@@ -99,7 +102,7 @@ impl RegistryManager {
 
         save_global_config(&config).await?;
         log::info!("Registry '{}' removed", name);
-        println!("✓ Registry '{}' removed", name);
+        println!("✅ Registry '{}' removed", name);
 
         Ok(())
     }
@@ -116,7 +119,7 @@ impl RegistryManager {
 
             println!("Syncing registry: {}", registry.name);
             RegistrySync::sync_registry(&registry.name, &registry.url).await?;
-            println!("✓ Registry '{}' synced successfully", registry.name);
+            println!("✅ Registry '{}' synced successfully", registry.name);
         } else {
             if config.registries.is_empty() {
                 println!("No registries configured. Add one with: ora registry add <name> <url>");
@@ -144,10 +147,10 @@ impl RegistryManager {
             for registry in enabled_registries {
                 println!("  → Syncing '{}'...", registry.name);
                 match RegistrySync::sync_registry(&registry.name, &registry.url).await {
-                    Ok(_) => println!("    ✓ Synced successfully"),
+                    Ok(_) => println!("    ✅ Synced successfully"),
                     Err(e) => {
                         log::error!("Failed to sync registry '{}': {}", registry.name, e);
-                        println!("    ✗ Failed: {}", e);
+                        println!("    ❌ Failed: {}", e);
                     }
                 }
             }
@@ -219,7 +222,7 @@ impl RegistryManager {
                     );
                 }
 
-                log::info!(
+                log::debug!(
                     "Found package '{}' in registry '{}'",
                     package_name,
                     registry_name
@@ -296,7 +299,7 @@ impl RegistryManager {
                 package_name, registry_name
             ))?;
 
-        log::info!(
+        log::debug!(
             "Found package '{}' in registry '{}'",
             package_name,
             registry_name
@@ -317,7 +320,7 @@ impl RegistryManager {
             .find(|r| r.name == name)
             .context(format!("Registry '{}' not found in configuration", name))?;
 
-        println!("✓ Registry found in configuration");
+        println!("✅ Registry found in configuration");
         println!("  Name: {}", registry.name);
         println!("  URL: {}", registry.url);
         println!("  Trust Level: {:?}", registry.trust_level);
@@ -327,19 +330,19 @@ impl RegistryManager {
         let registry_path = Cache::registry_path(&name)?;
 
         if !registry_path.exists() {
-            println!("✗ Registry not synced locally");
+            println!("❌ Registry not synced locally");
             println!("  Expected path: {:?}", registry_path);
             println!("\n  Run 'ora registry sync {}' to download it", name);
             anyhow::bail!("Registry '{}' not synced", name);
         }
 
-        println!("✓ Registry synced locally");
+        println!("✅ Registry synced locally");
         println!("  Path: {:?}", registry_path);
 
         // 3. Check if it's a valid git repository
         match git2::Repository::open(&registry_path) {
             Ok(repo) => {
-                println!("✓ Valid git repository");
+                println!("✅ Valid git repository");
 
                 // Get current HEAD commit
                 if let Ok(head) = repo.head() {
@@ -363,27 +366,30 @@ impl RegistryManager {
                 }
             }
             Err(e) => {
-                println!("✗ Not a valid git repository: {}", e);
+                println!("❌ Not a valid git repository: {}", e);
                 anyhow::bail!("Registry directory exists but is not a valid git repository");
             }
         }
 
-        // 4. Check for ora-registry/ directory
-        let ora_registry_dir = registry_path.join("ora-registry");
+        // 4. Check for registry directory (configurable, defaults to "ora-registry")
+        let registry_dir_name = registry.get_registry_dir();
+        let registry_dir_path = registry_path.join(registry_dir_name);
 
-        if !ora_registry_dir.exists() {
-            println!("✗ Missing 'ora-registry/' directory");
+        if !registry_dir_path.exists() {
+            println!("❌ Missing '{}/' directory", registry_dir_name);
             println!(
-                "  A valid registry must contain an 'ora-registry/' directory with .repo files"
+                "  A valid registry must contain a '{}/' directory with .repo files",
+                registry_dir_name
             );
             anyhow::bail!(
-                "Registry '{}' is missing the required 'ora-registry/' directory",
-                name
+                "Registry '{}' is missing the required '{}/' directory",
+                name,
+                registry_dir_name
             );
         }
 
-        println!("✓ 'ora-registry/' directory exists");
-        let registry_dir = ora_registry_dir;
+        println!("✅ '{}/' directory exists", registry_dir_name);
+        let registry_dir = registry_dir_path;
 
         // 5. Count .repo files
         let mut repo_files = Vec::new();
@@ -403,7 +409,7 @@ impl RegistryManager {
             println!("  This registry appears to be empty");
         } else {
             println!(
-                "✓ Found {} package definition{}",
+                "✅ Found {} package definition{}",
                 repo_files.len(),
                 if repo_files.len() == 1 { "" } else { "s" }
             );
@@ -420,7 +426,7 @@ impl RegistryManager {
         }
 
         println!();
-        println!("✓ Registry '{}' verification complete!", name);
+        println!("✅ Registry '{}' verification complete!", name);
 
         Ok(())
     }

@@ -1,0 +1,39 @@
+# Ora Package Manager - Self-Update Definition
+name = "ora"
+description = "Omni Repository for Archives - Decentralized package manager"
+homepage = "https://github.com/Altagen/Ora"
+
+[source]
+type = "github-releases"
+repo = "Altagen/Ora"
+
+[source.download]
+url = "https://github.com/Altagen/Ora/releases/download/{version}/ora-{os}-{arch}"
+
+[platform]
+[platform.os_map]
+linux = "linux"
+macos = "macos"
+
+[platform.arch_map]
+x86_64 = "x86_64"
+aarch64 = "aarch64"
+
+[install]
+mode = "userland"
+# Binary is already standalone, no archive needed
+direct_binary = true
+binaries = ["ora"]
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/Altagen/Ora/releases/download/{version}/checksums.txt"
+algorithm = "sha256"
+format = "standard"
+
+[metadata]
+license = "MIT OR Apache-2.0"
+authors = ["Ange Cesari"]
+tags = ["package-manager", "cli", "self-hosted"]

@@ -17,7 +17,7 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
     };
 
     for package_name in packages_to_update {
-        log::info!("Checking updates for {}...", package_name);
+        log::debug!("Checking updates for {}...", package_name);
 
         let installed = match db.packages.get(&package_name) {
             Some(pkg) => pkg,
@@ -36,7 +36,7 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
         let (repo_file_path, registry_name) =
             if let Some(file_path) = installed.registry_source.strip_prefix("file:") {
                 // Package was installed from a local .repo file
-                log::info!(
+                log::debug!(
                     "Package '{}' was installed from local file: {}",
                     package_name,
                     file_path
@@ -44,7 +44,7 @@ pub async fn execute(args: UpdateArgs) -> Result<()> {
                 (Some(file_path.to_string()), None)
             } else if let Some(reg_name) = installed.registry_source.strip_prefix("registry:") {
                 // Package was installed from a registry
-                log::info!(
+                log::debug!(
                     "Package '{}' was installed from registry: {}",
                     package_name,
                     reg_name

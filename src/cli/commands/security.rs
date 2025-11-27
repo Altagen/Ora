@@ -30,7 +30,7 @@ async fn init_config() -> Result<()> {
     let config_path = crate::storage::paths::Paths::config_dir()?;
     let security_config_path = config_path.join("security.toml");
 
-    println!("✓ Created security configuration at:");
+    println!("✅ Created security configuration at:");
     println!("   {}", security_config_path.display());
     println!("\nYou can now customize security settings by editing this file.");
     println!("\nKey settings to review:");
@@ -232,7 +232,7 @@ async fn reset_config() -> Result<()> {
     let config_path = crate::storage::paths::Paths::config_dir()?;
     let security_config_path = config_path.join("security.toml");
 
-    println!("✓ Reset security configuration to defaults:");
+    println!("✅ Reset security configuration to defaults:");
     println!("   {}", security_config_path.display());
     println!("\nRun 'ora security show' to view current settings.");
 
@@ -242,9 +242,9 @@ async fn reset_config() -> Result<()> {
 // Helper functions for formatting
 fn format_bool(value: bool) -> String {
     if value {
-        "✓ Yes".to_string()
+        "✅ Yes".to_string()
     } else {
-        "✗ No".to_string()
+        "❌ No".to_string()
     }
 }
 

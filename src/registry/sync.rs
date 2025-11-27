@@ -51,14 +51,14 @@ impl RegistrySync {
         match registry_type {
             RegistryType::Git => {
                 if let Some(br) = branch {
-                    log::info!(
+                    log::debug!(
                         "Syncing Git registry '{}' from {} (branch: {})",
                         name,
                         url,
                         br
                     );
                 } else {
-                    log::info!("Syncing Git registry '{}' from {}", name, url);
+                    log::debug!("Syncing Git registry '{}' from {}", name, url);
                 }
                 let registry_path = Cache::registry_path(name)?;
 
@@ -74,7 +74,7 @@ impl RegistrySync {
                 log::info!("Registry '{}' synced successfully", name);
             }
             RegistryType::DirectUrl => {
-                log::info!("Syncing Direct URL registry '{}' from {}", name, url);
+                log::debug!("Syncing Direct URL registry '{}' from {}", name, url);
                 // For Direct URL registries, we fetch the .repo file on-demand
                 // No need to sync/download it now
                 log::debug!("Direct URL registries are fetched on-demand, no sync needed");
@@ -108,17 +108,19 @@ impl RegistrySync {
                     anyhow::bail!("Registry '{}' not synced", registry_name);
                 }
 
-                // Look for package.repo file in ora-registry/ directory
+                // Look for package.repo file in configured registry directory
+                let registry_dir = registry.get_registry_dir();
                 let repo_file = registry_path
-                    .join("ora-registry")
+                    .join(registry_dir)
                     .join(format!("{}.repo", package_name));
 
                 if !repo_file.exists() {
                     anyhow::bail!(
                         "Package '{}' not found in registry '{}'. \
-                         Registry must contain an 'ora-registry/' directory with .repo files.",
+                         Registry must contain a '{}/' directory with .repo files.",
                         package_name,
-                        registry_name
+                        registry_name,
+                        registry_dir
                     );
                 }
 

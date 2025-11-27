@@ -76,14 +76,14 @@ async fn main() -> Result<()> {
 
         SHUTDOWN_REQUESTED.store(true, Ordering::SeqCst);
 
-        log::info!("Cleaning up temporary files...");
+        log::debug!("Cleaning up temporary files...");
 
         // Attempt to clean up cache downloads
         if let Err(e) = storage::cache::Cache::clear_downloads() {
             log::warn!("Failed to clean up downloads during shutdown: {}", e);
         }
 
-        log::info!("✓ Graceful shutdown complete");
+        log::debug!("✅ Graceful shutdown complete");
         std::process::exit(130); // Exit code 130 = terminated by Ctrl+C
     });
 
@@ -105,7 +105,7 @@ async fn main() -> Result<()> {
         eprintln!("Error: {}", e);
 
         // Clean up on error
-        log::info!("Cleaning up after error...");
+        log::debug!("Cleaning up after error...");
         if let Err(cleanup_err) = storage::cache::Cache::clear_downloads() {
             log::warn!("Failed to clean up downloads: {}", cleanup_err);
         }
