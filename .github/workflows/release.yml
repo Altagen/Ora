@@ -156,11 +156,11 @@ jobs:
       - name: Build binary
         run: task ${{ matrix.task }}
 
-      - name: Generate checksum
-        run: task checksums
-
       - name: Create archive
         run: task archive
+
+      - name: Generate checksums
+        run: task checksums
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -189,6 +189,35 @@ jobs:
         run: |
           mkdir -p release-assets
           find artifacts -type f \( -name "*.tar.gz" -o -name "*.sha256" \) -exec cp {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Install Task
+        uses: arduino/setup-task@v1
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate checksums summary and SBOM
+        run: |
+          # Create checksums.txt
+          cd release-assets
+          echo "# SHA256 Checksums for Ora ${{ needs.generate-changelog.outputs.version }}" > checksums.txt
+          echo "" >> checksums.txt
+          for file in *.tar.gz; do
+            if [ -f "$file" ]; then
+              sha256sum "$file" >> checksums.txt
+            fi
+          done
+          cd ..
+
+          # Generate SBOM
+          task sbom
+          cp dist/ora-${{ needs.generate-changelog.outputs.version }}-sbom.json release-assets/
+
+          echo "Release assets:"
           ls -lh release-assets/
 
       - name: Download changelog
@@ -248,12 +277,26 @@ jobs:
           Verify the integrity of your download:
 
           ```bash
-          # Download checksum file
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-<platform>.tar.gz.sha256 -o checksum.txt
+          # Download checksums file
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/checksums.txt -o checksums.txt
 
-          # Verify (Linux/macOS)
-          sha256sum -c checksum.txt
+          # Verify your downloaded file
+          sha256sum -c checksums.txt --ignore-missing
           ```
+
+          Or verify individual files:
+
+          ```bash
+          # Download individual checksum
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-<platform>.tar.gz.sha256 -o checksum.sha256
+
+          # Verify
+          echo "$(cat checksum.sha256)  ora-$VERSION-<platform>.tar.gz" | sha256sum -c
+          ```
+
+          ## Software Bill of Materials (SBOM)
+
+          A complete SBOM listing all dependencies is available: [ora-$VERSION-sbom.json](https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-sbom.json)
 
           ## Documentation
 

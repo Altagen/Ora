@@ -116,40 +116,65 @@ tasks:
       - task: build-macos-amd64
       - task: build-macos-arm64
 
-  # Checksum tasks
-  checksums:
-    desc: Generate SHA256 checksums for all binaries
-    dir: "{{.DIST_DIR}}"
-    cmds:
-      - |
-        for file in {{.BINARY_NAME}}-*; do
-          if [ -f "$file" ]; then
-            sha256sum "$file" > "$file.sha256"
-            echo "Generated checksum for $file"
-          fi
-        done
-
-  # Archive tasks
+  # Archive tasks (before checksums!)
   archive:
     desc: Create archives for all binaries
     dir: "{{.DIST_DIR}}"
     cmds:
       - |
         for file in {{.BINARY_NAME}}-{{.VERSION}}-*; do
-          if [ -f "$file" ] && [ ! -f "$file.sha256" ]; then
+          # Only process binary files (exclude .sha256, .tar.gz, .txt)
+          if [ -f "$file" ] && [[ ! "$file" =~ \.(sha256|tar\.gz|txt|sbom\.json)$ ]]; then
             tar -czf "$file.tar.gz" "$file"
             echo "Created archive $file.tar.gz"
           fi
         done
 
+  # Checksum tasks
+  checksums:
+    desc: Generate SHA256 checksums for all tar.gz archives
+    dir: "{{.DIST_DIR}}"
+    cmds:
+      - |
+        for file in {{.BINARY_NAME}}-{{.VERSION}}-*.tar.gz; do
+          if [ -f "$file" ]; then
+            sha256sum "$file" | awk '{print $1}' > "$file.sha256"
+            echo "Generated checksum for $file"
+          fi
+        done
+
+  checksums-summary:
+    desc: Create checksums.txt summary file
+    dir: "{{.DIST_DIR}}"
+    cmds:
+      - |
+        echo "# SHA256 Checksums for Ora {{.VERSION}}" > checksums.txt
+        echo "" >> checksums.txt
+        for file in {{.BINARY_NAME}}-{{.VERSION}}-*.tar.gz; do
+          if [ -f "$file" ]; then
+            sha256sum "$file" >> checksums.txt
+          fi
+        done
+        echo "Created checksums.txt"
+
+  sbom:
+    desc: Generate Software Bill of Materials (SBOM)
+    cmds:
+      - command -v cargo-sbom >/dev/null 2>&1 || cargo install cargo-sbom
+      - mkdir -p {{.DIST_DIR}}
+      - "cargo sbom > {{.DIST_DIR}}/ora-{{.VERSION}}-sbom.json"
+      - echo "Generated SBOM{{":"}} {{.DIST_DIR}}/ora-{{.VERSION}}-sbom.json"
+
   # Release preparation
   prepare-release:
-    desc: Prepare release artifacts (build all, checksums, archives)
+    desc: Prepare release artifacts (build all, archives, checksums, SBOM)
     cmds:
       - rm -rf {{.DIST_DIR}}
       - task: build-all
-      - task: checksums
       - task: archive
+      - task: checksums
+      - task: checksums-summary
+      - task: sbom
       - ls -lh {{.DIST_DIR}}/
 
   # Cleanup tasks
