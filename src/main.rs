@@ -102,7 +102,7 @@ async fn main() -> Result<()> {
     };
 
     if let Err(e) = result {
-        eprintln!("Error: {}", e);
+        utils::ui::error(&format!("{}", e));
 
         // Clean up on error
         log::debug!("Cleaning up after error...");
