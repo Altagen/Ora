@@ -1,0 +1,35 @@
+name = "velt"
+description = "A modern, minimal code and text editor built with Tauri, Svelte, and CodeMirror"
+repo_version = 1
+homepage = "https://github.com/Altagen/Velt"
+
+[source]
+type = "github-releases"
+repo = "Altagen/Velt"
+
+[source.download]
+url = "https://github.com/Altagen/Velt/releases/download/{version}/velt-{version}-{os}-{arch}.tar.gz"
+
+[platform.os_map]
+linux = "linux"
+macos = "macos"
+
+[platform.arch_map]
+x86_64 = "x86_64"
+aarch64 = "aarch64"
+
+[install]
+binaries = ["velt"]
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/Altagen/Velt/releases/download/{version}/SHA256SUMS.txt"
+algorithm = "sha256"
+single_hash = false
+
+[metadata]
+license = "MIT"
+authors = ["Altagen"]
+tags = ["editor", "text-editor", "code-editor", "tauri", "svelte"]

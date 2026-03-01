@@ -1,0 +1,35 @@
+name = "rite"
+description = "A modern, minimal SSH/SFTP connection manager built with Tauri and React"
+repo_version = 1
+homepage = "https://github.com/Altagen/Rite"
+
+[source]
+type = "github-releases"
+repo = "Altagen/Rite"
+
+[source.download]
+url = "https://github.com/Altagen/Rite/releases/download/{version}/rite-{version}-{os}-{arch}.tar.gz"
+
+[platform.os_map]
+linux = "linux"
+macos = "macos"
+
+[platform.arch_map]
+x86_64 = "x86_64"
+aarch64 = "aarch64"
+
+[install]
+binaries = ["rite"]
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/Altagen/Rite/releases/download/{version}/rite-{version}-{os}-{arch}.tar.gz.sha256"
+algorithm = "sha256"
+format = "single-hash"
+
+[metadata]
+license = "MIT"
+authors = ["Altagen"]
+tags = ["ssh", "sftp", "gui", "connection-manager", "tauri"]

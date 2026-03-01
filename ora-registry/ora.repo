@@ -1,0 +1,35 @@
+name = "ora"
+description = "Secure, decentralized package manager for pre-compiled binaries"
+repo_version = 1
+homepage = "https://github.com/Altagen/Ora"
+
+[source]
+type = "github-releases"
+repo = "Altagen/Ora"
+
+[source.download]
+url = "https://github.com/Altagen/Ora/releases/download/{version}/ora-{version}-{os}-{arch}.tar.gz"
+
+[platform.os_map]
+linux = "linux"
+macos = "macos"
+
+[platform.arch_map]
+x86_64 = "amd64"
+aarch64 = "arm64"
+
+[install]
+binaries = ["ora"]
+
+[security]
+allow_insecure = false
+
+[security.checksum]
+url = "https://github.com/Altagen/Ora/releases/download/{version}/ora-{version}-{os}-{arch}.tar.gz.sha256"
+algorithm = "sha256"
+format = "single-hash"
+
+[metadata]
+license = "MIT OR Apache-2.0"
+authors = ["Altagen"]
+tags = ["package-manager", "binary-manager", "cli", "decentralized"]

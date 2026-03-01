@@ -181,19 +181,25 @@ impl RegistrySync {
             std::fs::create_dir_all(parent)?;
         }
 
-        // Use shallow clone (depth=1) to protect against git bombs
-        let mut fetch_options = git2::FetchOptions::new();
-        fetch_options.depth(1);
-
         let mut builder = git2::build::RepoBuilder::new();
-        builder.fetch_options(fetch_options);
+
+        // Use shallow clone (depth=1) to protect against git bombs.
+        // file:// URLs don't support shallow clones in git2; size check below
+        // still protects against local git bombs.
+        if !url.starts_with("file://") {
+            let mut fetch_options = git2::FetchOptions::new();
+            fetch_options.depth(1);
+            builder.fetch_options(fetch_options);
+            log::debug!("Using shallow clone (depth=1) for security");
+        } else {
+            log::debug!("Skipping depth=1 for file:// URL (not supported by git2)");
+        }
 
         // Set branch if specified
         if let Some(br) = branch {
             builder.branch(br);
         }
 
-        log::debug!("Using shallow clone (depth=1) for security");
         builder
             .clone(url, dest)
             .context("Failed to clone repository")?;
