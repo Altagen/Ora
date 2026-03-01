@@ -33,7 +33,7 @@ sequoia-openpgp = { version = "2", optional = true }
 git2 = { version = "0.20", features = ["vendored-openssl", "vendored-libgit2"] }
 glob = "0.3"
 urlencoding = "2.1"
-tempfile = "3.8"
+tempfile = "3.26"
 walkdir = "2.4"
 dirs = "5.0"
 anyhow = "1.0"
