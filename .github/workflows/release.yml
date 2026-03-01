@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '*.*.*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
 
 permissions:
   contents: write
@@ -11,7 +11,7 @@ permissions:
 jobs:
   # Only run releases from main branch
   check-branch:
-    name: Check Branch
+    name: 🔍 Check Branch
     runs-on: ubuntu-latest
     outputs:
       is_main: ${{ steps.check.outputs.is_main }}
@@ -24,36 +24,24 @@ jobs:
       - name: Check if on main branch
         id: check
         run: |
-          BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [ "$BRANCH" = "main" ] || [ "${{ github.ref_type }}" = "tag" ]; then
-            # For tags, check if the tag points to main
-            if [ "${{ github.ref_type }}" = "tag" ]; then
-              TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
-              MAIN_COMMIT=$(git rev-parse origin/main)
-              if [ "$TAG_COMMIT" = "$MAIN_COMMIT" ]; then
-                echo "is_main=true" >> $GITHUB_OUTPUT
-              else
-                echo "is_main=false" >> $GITHUB_OUTPUT
-                echo "Error: Tag must be created from main branch"
-                exit 1
-              fi
-            else
-              echo "is_main=true" >> $GITHUB_OUTPUT
-            fi
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          MAIN_COMMIT=$(git rev-parse origin/main)
+          if [ "$TAG_COMMIT" = "$MAIN_COMMIT" ]; then
+            echo "is_main=true" >> $GITHUB_OUTPUT
           else
             echo "is_main=false" >> $GITHUB_OUTPUT
-            echo "Error: Releases can only be created from main branch"
+            echo "::error::Tag must be created from main branch"
             exit 1
           fi
 
-  # Generate changelog from conventional commits
-  generate-changelog:
-    name: Generate Changelog
+  # Create draft release with changelog
+  create-release:
+    name: 📋 Create Release
     needs: check-branch
     if: needs.check-branch.outputs.is_main == 'true'
     runs-on: ubuntu-latest
     outputs:
-      changelog: ${{ steps.changelog.outputs.changelog }}
+      release_id: ${{ steps.create_release.outputs.id }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
@@ -61,48 +49,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get version
+      - name: Get version from tag
         id: version
-        run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          else
-            VERSION=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
-        id: changelog
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
           args: --latest --strip header
         env:
-          OUTPUT: CHANGELOG_RELEASE.md
+          OUTPUT: changelog.md
 
-      - name: Read changelog
-        id: read_changelog
-        run: |
-          if [ -f "CHANGELOG_RELEASE.md" ]; then
-            echo "changelog<<EOF" >> $GITHUB_OUTPUT
-            cat CHANGELOG_RELEASE.md >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "changelog=No changelog generated" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Upload changelog artifact
-        uses: actions/upload-artifact@v4
+      - name: Create draft release
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          name: changelog
-          path: CHANGELOG_RELEASE.md
-          retention-days: 7
+          tag_name: ${{ github.ref_name }}
+          name: Ora ${{ steps.version.outputs.version }}
+          body_path: changelog.md
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Build release binaries
   build-release:
-    name: Build Release Binaries
-    needs: [check-branch, generate-changelog]
+    name: 🔨 Build (${{ matrix.platform }})
+    needs: [check-branch, create-release]
     if: needs.check-branch.outputs.is_main == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
@@ -148,7 +122,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install Task
-        uses: arduino/setup-task@v1
+        uses: arduino/setup-task@v2
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -162,161 +136,85 @@ jobs:
       - name: Generate checksums
         run: task checksums
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload artifacts to release
+        uses: softprops/action-gh-release@v2
         with:
-          name: release-${{ matrix.platform }}
-          path: |
+          tag_name: ${{ github.ref_name }}
+          files: |
             dist/*.tar.gz
             dist/*.sha256
-          retention-days: 7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Create GitHub release
-  create-release:
-    name: Create GitHub Release
-    needs: [generate-changelog, build-release]
+  # Generate SBOM and consolidated checksums
+  finalize:
+    name: 📦 Finalize Release
+    needs: [create-release, build-release]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Prepare release assets
+      - name: Install system dependencies
         run: |
-          mkdir -p release-assets
-          find artifacts -type f \( -name "*.tar.gz" -o -name "*.sha256" \) -exec cp {} release-assets/ \;
-          ls -lh release-assets/
-
-      - name: Install Task
-        uses: arduino/setup-task@v1
-        with:
-          version: 3.x
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sudo apt-get update
+          sudo apt-get install -y nettle-dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Generate checksums summary and SBOM
-        run: |
-          # Create checksums.txt
-          cd release-assets
-          echo "# SHA256 Checksums for Ora ${{ needs.generate-changelog.outputs.version }}" > checksums.txt
-          echo "" >> checksums.txt
-          for file in *.tar.gz; do
-            if [ -f "$file" ]; then
-              sha256sum "$file" >> checksums.txt
-            fi
-          done
-          cd ..
-
-          # Generate SBOM
-          task sbom
-          cp dist/ora-${{ needs.generate-changelog.outputs.version }}-sbom.json release-assets/
-
-          echo "Release assets:"
-          ls -lh release-assets/
-
-      - name: Download changelog
-        uses: actions/download-artifact@v4
+      - name: Install Task
+        uses: arduino/setup-task@v2
         with:
-          name: changelog
-          path: .
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Read release template
-        id: template
-        run: |
-          VERSION="${{ needs.generate-changelog.outputs.version }}"
+      - name: Generate SBOM
+        run: task sbom
 
-          # Read changelog if exists
-          if [ -f "CHANGELOG_RELEASE.md" ]; then
-            CHANGELOG=$(cat CHANGELOG_RELEASE.md)
-          else
-            CHANGELOG="See commits for changes in this release."
-          fi
-
-          # Create release notes from template
-          cat > RELEASE_NOTES.md << 'TEMPLATE'
-          # Ora Package Manager $VERSION
-
-          ## What's Changed
-
-          $CHANGELOG
-
-          ## Installation
-
-          ### Linux (x86_64)
-          ```bash
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-linux-amd64.tar.gz | tar xz
-          sudo install -m 755 ora-$VERSION-linux-amd64 /usr/local/bin/ora
-          ```
-
-          ### Linux (ARM64)
-          ```bash
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-linux-arm64.tar.gz | tar xz
-          sudo install -m 755 ora-$VERSION-linux-arm64 /usr/local/bin/ora
-          ```
-
-          ### macOS (Intel)
-          ```bash
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-macos-amd64.tar.gz | tar xz
-          sudo install -m 755 ora-$VERSION-macos-amd64 /usr/local/bin/ora
-          ```
-
-          ### macOS (Apple Silicon)
-          ```bash
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-macos-arm64.tar.gz | tar xz
-          sudo install -m 755 ora-$VERSION-macos-arm64 /usr/local/bin/ora
-          ```
-
-          ## Verification
-
-          Verify the integrity of your download:
-
-          ```bash
-          # Download checksums file
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/checksums.txt -o checksums.txt
-
-          # Verify your downloaded file
-          sha256sum -c checksums.txt --ignore-missing
-          ```
-
-          Or verify individual files:
-
-          ```bash
-          # Download individual checksum
-          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-<platform>.tar.gz.sha256 -o checksum.sha256
-
-          # Verify
-          echo "$(cat checksum.sha256)  ora-$VERSION-<platform>.tar.gz" | sha256sum -c
-          ```
-
-          ## Software Bill of Materials (SBOM)
-
-          A complete SBOM listing all dependencies is available: [ora-$VERSION-sbom.json](https://github.com/${{ github.repository }}/releases/download/$VERSION/ora-$VERSION-sbom.json)
-
-          ## Documentation
-
-          - [README](https://github.com/${{ github.repository }}/blob/$VERSION/README.md)
-          TEMPLATE
-
-          # Replace variables
-          sed -i "s/\$VERSION/$VERSION/g" RELEASE_NOTES.md
-          sed -i "/\$CHANGELOG/r CHANGELOG_RELEASE.md" RELEASE_NOTES.md
-          sed -i "/\$CHANGELOG/d" RELEASE_NOTES.md
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Download release checksums
+        uses: robinraju/release-downloader@v1
         with:
-          tag_name: ${{ needs.generate-changelog.outputs.version }}
-          name: Ora ${{ needs.generate-changelog.outputs.version }}
-          body_path: RELEASE_NOTES.md
-          draft: false
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          fileName: "*.sha256"
+          out-file-path: "checksums"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create consolidated checksums file
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          cd checksums
+          cat *.sha256 > "../ora-${VERSION}-checksums.txt"
+          echo "Consolidated checksums:"
+          cat "../ora-${VERSION}-checksums.txt"
+
+      - name: Upload SBOM and checksums
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
           files: |
-            release-assets/*
+            dist/*sbom*
+            ora-${{ needs.create-release.outputs.version }}-checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Publish release (remove draft status)
+  publish:
+    name: 🚀 Publish Release
+    needs: [create-release, finalize]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }},
+              draft: false
+            });
