@@ -54,7 +54,7 @@ gpg = ["sequoia-openpgp"]
 
 [dev-dependencies]
 mockito = "1.2"
-assert_cmd = "2.0"
+assert_cmd = "2.1"
 predicates = "3.0"
 
 [profile.release]
