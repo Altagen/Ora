@@ -41,7 +41,7 @@ thiserror = "2.0"
 log = "0.4"
 env_logger = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
-platforms = "3.3"
+platforms = "3.8"
 url = "2.5"
 async-trait = "0.1"
 regex = "1.12"
