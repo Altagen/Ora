@@ -45,7 +45,7 @@ platforms = "3.3"
 url = "2.5"
 async-trait = "0.1"
 regex = "1.12"
-md5 = "0.7"
+md5 = "0.8"
 semver = "1.0"
 
 [features]
