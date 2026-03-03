@@ -132,30 +132,24 @@ tasks:
 
   # Checksum tasks
   checksums:
-    desc: Generate SHA256 checksums for all tar.gz archives
+    desc: Generate SHA256 checksums for all tar.gz archives (hash + filename format)
     dir: "{{.DIST_DIR}}"
     cmds:
       - |
         for file in {{.BINARY_NAME}}-{{.VERSION}}-*.tar.gz; do
           if [ -f "$file" ]; then
-            sha256sum "$file" | awk '{print $1}' > "$file.sha256"
+            sha256sum "$file" > "$file.sha256"
             echo "Generated checksum for $file"
           fi
         done
 
   checksums-summary:
-    desc: Create checksums.txt summary file
+    desc: Consolidate per-artifact checksums into SHA256SUMS.txt
     dir: "{{.DIST_DIR}}"
     cmds:
       - |
-        echo "# SHA256 Checksums for Ora {{.VERSION}}" > checksums.txt
-        echo "" >> checksums.txt
-        for file in {{.BINARY_NAME}}-{{.VERSION}}-*.tar.gz; do
-          if [ -f "$file" ]; then
-            sha256sum "$file" >> checksums.txt
-          fi
-        done
-        echo "Created checksums.txt"
+        cat {{.BINARY_NAME}}-{{.VERSION}}-*.tar.gz.sha256 > SHA256SUMS.txt
+        echo "Created SHA256SUMS.txt"
 
   sbom:
     desc: Generate Software Bill of Materials (SBOM)
