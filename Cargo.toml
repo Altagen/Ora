@@ -1,6 +1,6 @@
 [package]
 name = "ora"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 authors = ["Ange Cesari"]
 description = "Omni Repository for Archives - Decentralized package manager"
@@ -62,3 +62,18 @@ opt-level = 3
 lto = true
 codegen-units = 1
 strip = true
+
+[package.metadata.deb]
+maintainer = "Altagen"
+copyright = "2025, Altagen"
+extended-description = "Secure, decentralized package manager for pre-compiled binaries."
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/ora", "usr/bin/", "755"],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/ora", dest = "/usr/bin/ora", mode = "755" },
+]
