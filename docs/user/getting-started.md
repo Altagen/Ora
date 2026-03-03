@@ -15,23 +15,104 @@ This guide will help you get Ora up and running in minutes.
 
 ## Installation
 
-### Option 1: From Source (Recommended)
+### Option 1: Pre-built Binaries (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/Altagen/Ora/releases).
+
+#### Linux
+
+Three package formats are available for Linux (amd64 and arm64):
+
+**Debian / Ubuntu — `.deb`**
+```bash
+# Download and install
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-linux-amd64.deb
+sudo dpkg -i ora-VERSION-linux-amd64.deb
+```
+
+**Fedora / RHEL / openSUSE — `.rpm`**
+```bash
+# Download and install
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-linux-amd64.rpm
+sudo rpm -i ora-VERSION-linux-amd64.rpm
+# or: sudo dnf install ./ora-VERSION-linux-amd64.rpm
+```
+
+**Any Linux distribution — `.tar.gz`**
+```bash
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-linux-amd64.tar.gz
+tar xzf ora-VERSION-linux-amd64.tar.gz
+mkdir -p ~/.local/bin
+mv ora-VERSION-linux-amd64 ~/.local/bin/ora
+```
+
+Replace `VERSION` with the latest release tag (e.g. `0.2.5`) and `amd64` with `arm64` for ARM machines.
+
+#### macOS
+
+Two formats are available for macOS (amd64 and arm64).
+
+**Installer package — `.pkg`**
+
+Installs `ora` to `/usr/local/bin` (requires admin password).
+
+> **Ora is not signed with an Apple Developer certificate.** macOS Gatekeeper will block
+> the installer by default. Remove the quarantine attribute before running it:
+>
+> ```bash
+> xattr -d com.apple.quarantine ora-VERSION-macos-amd64.pkg
+> ```
+>
+> Without this step, macOS will refuse to open the package. To avoid this entirely,
+> use the `.tar.gz` option below — it has no quarantine restrictions when extracted
+> via the terminal.
 
 ```bash
-# Clone the repository
-git clone https://github.com/Altagen/Ora
-cd ora
+# Intel (amd64)
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-macos-amd64.pkg
+xattr -d com.apple.quarantine ora-VERSION-macos-amd64.pkg
+sudo installer -pkg ora-VERSION-macos-amd64.pkg -target /
 
-# Build the release binary
-cargo build --release
-
-# Copy to your PATH
-sudo cp target/release/ora /usr/local/bin/
-# Or for user-only install:
-mkdir -p ~/.local/bin
-cp target/release/ora ~/.local/bin/
-# Make sure ~/.local/bin is in your PATH
+# Apple Silicon (arm64)
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-macos-arm64.pkg
+xattr -d com.apple.quarantine ora-VERSION-macos-arm64.pkg
+sudo installer -pkg ora-VERSION-macos-arm64.pkg -target /
 ```
+
+**Archive — `.tar.gz`** *(zero friction)*
+
+Extracted via `tar` in the terminal, the binary carries no quarantine attribute and
+works immediately without any extra step.
+
+```bash
+# Intel (amd64)
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-macos-amd64.tar.gz
+tar xzf ora-VERSION-macos-amd64.tar.gz
+mkdir -p ~/.local/bin
+mv ora-VERSION-macos-amd64 ~/.local/bin/ora
+
+# Apple Silicon (arm64)
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/ora-VERSION-macos-arm64.tar.gz
+tar xzf ora-VERSION-macos-arm64.tar.gz
+mkdir -p ~/.local/bin
+mv ora-VERSION-macos-arm64 ~/.local/bin/ora
+```
+
+Make sure `~/.local/bin` is in your `PATH`:
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### Verify checksums
+
+All release artifacts are covered by `SHA256SUMS.txt`:
+```bash
+curl -LO https://github.com/Altagen/Ora/releases/latest/download/SHA256SUMS.txt
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+---
 
 ### Option 2: Using Cargo
 
@@ -39,11 +120,21 @@ cp target/release/ora ~/.local/bin/
 cargo install --git https://github.com/Altagen/Ora
 ```
 
+### Option 3: From Source
+
+```bash
+git clone https://github.com/Altagen/Ora
+cd Ora
+cargo build --release
+mkdir -p ~/.local/bin
+cp target/release/ora ~/.local/bin/
+```
+
 ### Verify Installation
 
 ```bash
 ora --version
-# Output: ora 0.2.0
+# Output: ora 0.2.5
 ```
 
 ---

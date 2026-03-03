@@ -85,15 +85,19 @@ jobs:
           - os: ubuntu-latest
             task: build-linux-amd64
             platform: linux-amd64
+            target: x86_64-unknown-linux-gnu
           - os: ubuntu-latest
             task: build-linux-arm64
             platform: linux-arm64
+            target: aarch64-unknown-linux-gnu
           - os: macos-latest
             task: build-macos-amd64
             platform: macos-amd64
+            target: ""
           - os: macos-latest
             task: build-macos-arm64
             platform: macos-arm64
+            target: ""
 
     steps:
       - name: Checkout code
@@ -136,15 +140,75 @@ jobs:
       - name: Generate checksums
         run: task checksums
 
-      - name: Upload artifacts to release
+      - name: Build .deb and .rpm packages (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          cargo install cargo-deb cargo-generate-rpm
+
+          cargo deb --target ${{ matrix.target }} --no-build \
+            --output "dist/ora-${VERSION}-${{ matrix.platform }}.deb"
+
+          cargo generate-rpm --target ${{ matrix.target }} \
+            -o "dist/ora-${VERSION}-${{ matrix.platform }}.rpm"
+
+          sha256sum "dist/ora-${VERSION}-${{ matrix.platform }}.deb" > "dist/ora-${VERSION}-${{ matrix.platform }}.deb.sha256"
+          sha256sum "dist/ora-${VERSION}-${{ matrix.platform }}.rpm" > "dist/ora-${VERSION}-${{ matrix.platform }}.rpm.sha256"
+
+      - name: Build .pkg installer (macOS only)
+        if: runner.os == 'macOS'
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          BINARY="dist/ora-${VERSION}-${{ matrix.platform }}"
+
+          mkdir -p staging
+          cp "${BINARY}" staging/ora
+          chmod 755 staging/ora
+
+          pkgbuild \
+            --root staging \
+            --identifier com.altagen.ora \
+            --version "${VERSION}" \
+            --install-location /usr/local/bin \
+            "dist/ora-${VERSION}-${{ matrix.platform }}.pkg"
+
+          sha256sum "dist/ora-${VERSION}-${{ matrix.platform }}.pkg" > "dist/ora-${VERSION}-${{ matrix.platform }}.pkg.sha256"
+
+          rm -rf staging
+
+      - name: Upload archives to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux packages to release
+        if: runner.os == 'Linux'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            dist/*.tar.gz
-            dist/*.sha256
+            dist/*.deb
+            dist/*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS installer to release
+        if: runner.os == 'macOS'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/*.pkg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload checksums as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksum-${{ matrix.platform }}
+          path: dist/*.sha256
 
   # Generate SBOM and consolidated checksums
   finalize:
@@ -174,29 +238,26 @@ jobs:
       - name: Generate SBOM
         run: task sbom
 
-      - name: Download release checksums
-        uses: robinraju/release-downloader@v1
+      - name: Download checksum artifacts
+        uses: actions/download-artifact@v4
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
-          fileName: "*.sha256"
-          out-file-path: "checksums"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: checksum-*
+          merge-multiple: true
+          path: checksums/
 
-      - name: Create consolidated checksums file
+      - name: Create SHA256SUMS.txt
         run: |
-          VERSION="${{ needs.create-release.outputs.version }}"
-          cd checksums
-          cat *.sha256 > "../ora-${VERSION}-checksums.txt"
-          echo "Consolidated checksums:"
-          cat "../ora-${VERSION}-checksums.txt"
+          cat checksums/*.sha256 > SHA256SUMS.txt
+          echo "SHA256SUMS.txt contents:"
+          cat SHA256SUMS.txt
 
-      - name: Upload SBOM and checksums
+      - name: Upload SBOM and SHA256SUMS.txt
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
             dist/*sbom*
-            ora-${{ needs.create-release.outputs.version }}-checksums.txt
+            SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

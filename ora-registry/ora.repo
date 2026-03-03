@@ -25,9 +25,9 @@ binaries = ["ora"]
 allow_insecure = false
 
 [security.checksum]
-url = "https://github.com/Altagen/Ora/releases/download/{version}/ora-{version}-{os}-{arch}.tar.gz.sha256"
+url = "https://github.com/Altagen/Ora/releases/download/{version}/SHA256SUMS.txt"
 algorithm = "sha256"
-format = "single-hash"
+format = "multi-hash"
 
 [metadata]
 license = "MIT OR Apache-2.0"
