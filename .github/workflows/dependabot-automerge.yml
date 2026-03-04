@@ -19,8 +19,10 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Enable auto-merge (Cargo only)
-        if: "!startsWith(steps.metadata.outputs.dependency-names, 'actions/')"
+      - name: Enable auto-merge (patch and minor only, non-actions)
+        if: |
+          !startsWith(steps.metadata.outputs.dependency-names, 'actions/') &&
+          steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
