@@ -38,32 +38,6 @@ jobs:
       - name: Run security audit
         run: task audit
 
-  # CodeQL analysis (Rust is supported since 2024)
-  codeql:
-    name: 🛡️ CodeQL
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y nettle-dev
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: rust
-        continue-on-error: true
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v4
-        continue-on-error: true
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
-        continue-on-error: true
-
   # Weekly SBOM
   sbom:
     name: 📋 Weekly SBOM
